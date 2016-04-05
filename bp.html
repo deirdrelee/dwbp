@@ -17,7 +17,7 @@ exists as a normal ul. If JS is active, the list is replaced by the icons
 
       window.onload=init;
 
-function bpObject(t,id,b) {
+function bpObject(t,id,b,reqs) {
   this.title = t;   // The BP's title
   this.id = id      // Its id
   if (b != undefined) {
@@ -27,6 +27,11 @@ function bpObject(t,id,b) {
     }
     this.benefits = benefitList;       // Its benefits in an array
   }
+	var requirementList = new Array();
+	for (var i = 0; i < reqs.length; i++) {
+		requirementList.push(reqs[i].hash.substring(1));
+	}
+	this.requirements = requirementList;
 }
 
 function benefitObject(b) {
@@ -40,6 +45,60 @@ function benefitObject(b) {
   this.img = img; */
 }
 
+function createBenefitsTable(BPList) {
+
+  // function to generate table of bp vs. benefits
+
+  var benefitsTable = document.getElementById('bpbenefitstable');
+  var tbody = benefitsTable.getElementsByTagName('tbody')[0];
+
+  BPList.forEach(function(bp){
+    var row = tbody.insertRow(tbody.rows.length); // new row for the table
+    var cellBp = row.insertCell(0);               // cell for BP title
+    var cellBenefits = row.insertCell(1);         // cell for benefits
+    var bpTitle = document.createTextNode(bp.title);
+    var bpLink = document.createElement('a');
+
+    bpLink.setAttribute('href', '#'+bp.id);
+    bpLink.appendChild(bpTitle);
+    cellBp.appendChild(bpLink);  // put BP link on the cell
+
+    var ul = document.createElement('ul');
+    ul.setAttribute('class', 'benefitsList');  // create a new ul for benefitsList
+
+    bp.benefits.forEach(function(benefit){  // iterate over benefits of the BP
+      var li = document.createElement('li');
+      var benefitText = document.createTextNode(benefit);
+      li.appendChild(benefitText);
+      ul.appendChild(li);
+    });
+    cellBenefits.appendChild(ul);
+  });
+}
+
+function updateBenefitListReuse() {
+  var benefitListReuse = document.getElementById('benefitListReuse');
+  var ul = benefitListReuse.getElementsByTagName('ul')[0];
+
+  benefitListReuse.removeChild(ul);
+
+  var p = document.createElement('p');
+  p.appendChild(document.createTextNode('All Best Practices'));
+  benefitListReuse.appendChild(p);
+}
+
+function createRequirementsTable(BPlist) {
+	var reqs = new Array();
+	BPlist.forEach(function(bp){
+		bp.requirements.forEach(function(req){
+			if (reqs[req] === undefined) {
+				reqs[req] = new Array();
+			}
+			reqs[req].push(bp);
+		});
+	});
+	console.log(reqs);
+}
 
 function init() {
 
@@ -59,13 +118,12 @@ function init() {
   // Get list of our BPs and put them in an array of objects
 
   var BPlist = new Array (); // This will be our array of BPs from the document
-
   var BPdivs = new Array ();
   BPdivs = document.getElementsByClassName('practice'); // This is the info we have effectively scraped from the page
 
   // Need the title and id of each one
   for (var i = 0; i < BPdivs.length; i++) {
-    var t; var id; var b;
+    var t; var id; var b; var reqs;
     var BPtop = BPdivs[i].getElementsByClassName('practicelab');
     t = BPtop[0].textContent; // There should only be values in BPtop[0]
     id = BPtop[0].id;
@@ -76,12 +134,16 @@ function init() {
     } else {
       b = undefined;
     }
-    BPlist.push(new bpObject(t, id, b)) ;
+		var BPrequirementsList = BPdivs[i].getElementsByClassName('ucr')[0].getElementsByTagName('a');
+		reqs = BPrequirementsList;
+    BPlist.push(new bpObject(t, id, b, reqs)) ;
   }
+
+  createBenefitsTable(BPlist); // Call function to create Benefits Table
+  createRequirementsTable(BPlist); // Call function to create Requirements Table
 
   // Now create the panels
   var r;
-
 
   for (var i = 0; i < theBenefits.length; i++) {               // Working through the list of benefits
     r = document.createElement('div');                         // Need to create the div, ready to add the list items for this benefit
@@ -143,6 +205,8 @@ function init() {
       }
     }
   }
+
+  updateBenefitListReuse(); // replace ul>li of Benefits Reuse to text "All Best Practices"
 
   // Separately, we need to set up the cross dom for the challenges SVG
 
@@ -538,7 +602,8 @@ table.bptable caption {
         data is managed, thus promoting the reuse of data and also to foster
         trust in the data among developers, whatever technology they choose to
         use, increasing the potential for genuine innovation.</p>
-      <p>This document sets out a series of best practices that will help publishers and consumers face the new challenges and opportunities posed by data on the Web. They intend to serve a general purpose of publishing and using Data on the Web, but they may be specialized according to specific domains, such as Spatial Data on the Web Best Practices [[SDW]].</p>
+      <p>A general best practice to publish Data on the Web is to use standards. Different types of organizations specify standards that are specific to the publishing of datasets related to particular domains/applications, involving communities of users interested in that data. These standards define a common way of communicating information among the users of these communities. For example, publishing of timetables have two standards, the General Transit Feed Specification [[GTFS]] and the Service Interface for Real Time Information [[SIRI]], that specify, in a mixed way, standardize terms, standardized data formats and standardized data access. As was said before, the Best Practices proposed in this document serve a general purpose of publishing and using Data on the Web. These Best Practices are domain/application independent. They could be extended or complemented by other best practices documents or standards that cover the publishing of datasets in a more restricted universe.</p>
+      <p>Taking that into account, this document sets out a series of best practices that will help publishers and consumers face the new challenges and opportunities posed by data on the Web. They intend to serve a general purpose of publishing and using Data on the Web, but they may be specialized according to specific domains, such as Spatial Data on the Web Best Practices [[SDW]].</p>
       <p>Best practices cover different aspects related to data publishing and
         consumption, like data formats, data access, data identifiers and
         metadata. In order to delimit the scope and elicit the required features
@@ -628,6 +693,71 @@ table.bptable caption {
         datasets it is important to adopt Data Vocabularies and Standards. </p>
       <img src="images/context.jpg" alt="Our Context" height="440" width="640">
     </section>
+    <section id="namespaces" class="informative">
+      <h2> Namespaces </h2>
+<p> The following namespace prefixes are used throughout this document. </p>
+      <table id="uripatternstable">
+              <caption>Namespaces used in the document</caption>
+              <tbody>
+                <tr>
+                  <th>Prefix</th>
+                  <th>Namespace IRI</th>
+                </tr>
+                <tr>
+                  <td>cnt</td>
+                  <td>http://www.w3.org/2011/content</td>
+                </tr>
+                <tr>
+                  <td>dcat</td>
+                  <td>http://www.w3.org/ns/dcat#</td>
+                </tr>
+                 <tr>
+                  <td>dct</td>
+                  <td>http://purl.org/dc/terms/</td>
+                </tr>
+                <tr>
+                  <td>dqv</td>
+                  <td>http://www.w3.org/ns/dqv#</td>
+                </tr>
+                <tr>
+                  <td>duv</td>
+                  <td>http://www.w3.org/ns/duv#</td>
+                </tr>
+                <tr>
+                  <td>foaf</td>
+                  <td>http://xmlns.com/foaf/0.1/</td>
+                </tr>
+                <tr>
+                  <td>oa</td>
+                  <td>http://www.w3.org/ns/oa#</td>
+                </tr>
+                <tr>
+                  <td>owl</td>
+                  <td>http://www.w3.org/2002/07/owl#</td>
+                </tr>
+                <tr>
+                  <td>pav</td>
+                  <td>http://pav-ontology.github.io/pav/</td>
+                </tr>
+                <tr>
+                  <td>prov</td>
+                  <td>http://www.w3.org/ns/prov#</td>
+                </tr>
+                 <tr>
+                  <td>rdf</td>
+                  <td>http://www.w3.org/1999/02/22-rdf-syntax-ns#</td>
+                </tr>
+                <tr>
+                  <td>rdfs</td>
+                  <td>http://www.w3.org/2000/01/rdf-schema#</td>
+                </tr>
+                <tr>
+                  <td>skos</td>
+                  <td>http://www.w3.org/2004/02/skos/core#</td>
+                </tr>
+              </tbody>
+       </table>
+    </section>
     <section id="bp-template">
       <h2>Best Practices Template</h2>
       <p>This section presents the template used to describe Data on the Web
@@ -689,37 +819,32 @@ table.bptable caption {
       </div>
     </section>
     <section id="bp-summary"></section>
-    <div class="issue">To include filters to sort BPs according Benefits or Challenges (Tracker <a href="https://www.w3.org/2013/dwbp/track/issues/245">ISSUE-245</a>).</div>
     <section id="bestPractices">
       <h2>The Best Practices</h2>
       <p>This section contains the best practices to be used by data publishers in order to help them and data consumers to overcome the different challenges faced when publishing and consuming data on the Web. One or more best practices were proposed for each one of the challenges, which are described in the section <a href="#challenges">Data on the Web Challenges</a>.</p>
       <p>Each BP is related to one or more requirements from the <a href="http://www.w3.org/TR/dwbp-ucr/">Data on the Web Best Practices Use Cases &amp; Requirements document</a> document and the development of Data on the Web Best Practices was guided by these requirements, in such a way that each best practice should have at least one of these requirements as an evidence of its relevance.</p>
       <section id="basicExample">
-        <h3>Example</h3>
-        <p> This example serves as a basis for elaboration that will be
+        <h3>Basic Example</h3>
+        <!-- <p> The example below serve as a basis for elaboration that will be
           described in subsequent sections. It helps to illustrate how best
           practices may be applied. </p>
-        <aside class="example">
+        <aside class="example"> -->
           <p> John works for the Transport Agency of MyCity and he is in charge
-            of the publication of data on the Web about bus timetables as well
+            of the publication of data on the Web about bus stops as well
             as real time data about the traffic of the city. John decides to
-            create two datasets: one for the bus timetables and other one for
-            the real time traffic data. </p>
-          <p> Some requirements that should be addressed:</p>
+            create two datasets: one for the bus stops and other one to offer
+            real time traffic data. </p>
+          <!-- <p> Some requirements that should be addressed:</p>
           <ul>
             <li> The dataset for bus timetables must be available in two
               languages: English and Portuguese; </li>
             <li> Both datasets must be available in CSV and JSON-LD formats; </li>
-          </ul>
-        </aside>
-        When necessary RDF examples will be used to show the result of the
-        application of some best practices. RDF examples in this document are
-        written in Turtle syntax [[TURTLE]] and [[JSON-LD]].
+          </ul> -->
+        
+        When necessary RDF examples in Turtle syntax will be used to show the result of the
+        application of some best practices. 
       </section>
-      <div class="note">
-        <p> In this current version, examples are presented just in Turtle
-          syntax. </p>
-      </div>
+      
       <section id="metadata">
         <h3>Metadata</h3>
         <p>The Web is an open information space, where the absence of a specific
@@ -748,6 +873,7 @@ table.bptable caption {
           used, for example, discovery and reuse. </p>
         <p> </p>
         <!-- begin of Provide Metadata BP -->
+        
         <div class="practice">
           <p><span id="ProvideMetadata" class="practicelab">Provide metadata</span></p>
           <p class="practicedesc">Metadata must be provided for both human users
@@ -819,6 +945,7 @@ table.bptable caption {
         </div>
         <!-- end of BP -->
         <!-- begin Discovery Metadata BP -->
+        
         <div class="practice">
           <p><span id="DescriptiveMetadata" class="practicelab">Provide
               descriptive metadata</span></p>
@@ -877,22 +1004,37 @@ table.bptable caption {
               <h5>Machine-readable</h5>
               <p>The example below shows how to use [[VOCAB-DCAT]] to provide
                 the machine readable <strong> discovery </strong> metadata for
-                the timetable dataset (timetable-001). The dataset has one CSV
-                distribution (timetable-001-csv) that is also described using
-                the [[VOCAB-DCAT]].</p>
-              <pre class="highlight">  :timetable-001
-       a dcat:Dataset;
-       dct:title "Bus timetable of MyCity";
-       dcat:keyword "transport","mobility" ,"bus";
-       dct:issued "2015-05-05"^^xsd:date';
-       dct:modified "2015-05-05"^^xsd:date';
-       dcat:contactPoint &lt;http://example.org/transport-agency/contact&gt;;
-       dct:temporal &lt;http://reference.data.gov.uk/id/year/2014&gt;;
-       dct:spatial &lt;http://www.geonames.org/3399415&gt;;
-       dct:publisher:transport-agency-mycity ;
+                the bus stops dataset (<code>:bus-stops-2015-05-05</code>). The dataset has one CSV
+                distribution (<code>:bus-stops-2015-05-05.csv</code>) that is also described using
+                the [[VOCAB-DCAT]].
+The dataset is classified under
+                the domain represented by the relative URI <code>:mobility </code>. This
+                domain may be defined as part of a set of domains identified by
+                the URI <code>:themes </code>. 
+                  To describe both concepts and schema
+                concepts, John used <a href="http://www.w3.org/TR/skos-primer/">SKOS </a>.
+                To express frequency of update an instance from the <a href="http://www.w3.org/TR/vocab-data-cube/#dsd-cog">Content-Oriented
+                  Guidelines</a> developed as part of the <abbr title="World Wide Web Consortium">W3C</abbr>
+                Data Cube Vocabulary efforts was used. John chose to describe
+                the spatial and temporal coverage of the example dataset using
+                URIs from <a href="http://www.geonames.org/">Geonames</a> and the <a
+
+                  href="http://reference.data.gov.uk/id/interval"> Interval
+                  dataset</a> from data.gov.uk, respectively.
+
+                </p>
+              <pre class="highlight">  :bus-stops-2015-05-05
+       a dcat:Dataset ;
+       dct:title "Bus stops of MyCity" ;
+       dcat:keyword "transport","mobility","bus" ;
+       dct:issued "2015-05-05"^^xsd:date ;
+       dcat:contactPoint &lt;http://data.mycity.example.com/public-transport/contact&gt; ;
+       dct:temporal &lt;http://reference.data.gov.uk/id/year/2015&gt; ;
+       dct:spatial &lt;http://www.geonames.org/3399415&gt; ;
+       dct:publisher :transport-agency-mycity ;
        dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt; ;
-       dcat:theme :mobility;
-       dcat:distribution :timetable-001-csv;
+       dcat:theme :mobility ;
+       dcat:distribution :bus-stops-2015-05-05.csv ;
        .
 
        :mobility
@@ -906,30 +1048,14 @@ table.bptable caption {
        skos:prefLabel "A set of domains to classify documents" ;
        .
 
-       :timetable-001-csv
-       a dcat:Distribution;
-       dct:title "CSV distribution MyCity_busTimetable dataset."
-       dct:description "CSV distribution of the bus timetable dataset of MyCity."
-       dcat:mediaType "text/csv";
+       :bus-stops-2015-05-05.csv
+       a dcat:Distribution ;
+       dct:title "CSV distribution of bus-stops-05-05-2015 dataset" ;
+       dct:description "CSV distribution of the bus stops dataset of MyCity" ;
+       dcat:mediaType "text/csv" ;
        .
 </pre>
-              <div class="note"> Notice that this dataset is classified under
-                the domain represented by the relative URI :mobility. This
-                domain may be defined as part of a set of domains identified by
-                the URI :themes. <a href="http://www.w3.org/TR/skos-primer/">
-                  SKOS </a> can be used to describe both concepts and schema
-                concepts. </div>
-              <div class="note">Similar to the example of the DCAT
-                specification, in order to express frequency of update we chose
-                to use an instance from the <a href="http://www.w3.org/TR/vocab-data-cube/#dsd-cog">Content-Oriented
-                  Guidelines</a> developed as part of the <abbr title="World Wide Web Consortium">W3C</abbr>
-                Data Cube Vocabulary efforts. Additionally, we chose to describe
-                the spatial and temporal coverage of the example dataset using
-                URIs from <a href="http://www.geonames.org/">Geonames</a> and <a
-
-                  href="http://reference.data.gov.uk/id/interval">the Interval
-                  dataset</a> from data.gov.uk, respectively. </div>
-              <h5>Human-readable</h5>
+                            <h5>Human-readable</h5>
               <p><a href="dwbp-example.html">Example page</a> with
                 human-readable description of dataset is available.</p>
             </aside>
@@ -939,7 +1065,6 @@ table.bptable caption {
             <p> Check that the metadata for the dataset itself includes the
               overall features of the dataset.</p>
             <p> Check if a user agent can automatically discover the dataset. </p>
-            <div class="issue">How to test dataset discoverability? (Tracker <a href="https://www.w3.org/2013/dwbp/track/issues/247">ISSUE-247</a>)</div>
           </section>
           <section class="ucr">
             <p class="subhead">Evidence</p>
@@ -996,36 +1121,31 @@ table.bptable caption {
               [[VOCAB-DCAT]].</p>
             <aside class="example">
               <h5>Machine-readable</h5>
-              <p> The example below shows the machine readable metadata for
-                timetable-001 with the inclusion of the <strong> locale
-                  parameters </strong> metadata. </p>
-              <pre class="highlight">  :timetable-001
-       a dcat:Dataset;
-       dct:title "Bus timetable of MyCity";
-       dcat:keyword "transport","mobility" ,"bus";
-       dct:issued "2015-05-05";
-       dct:modified "2015-05-05";
-       dcat:contactPoint &lt;http://example.org/transport-agency/contact&gt;;
-       dct:temporal &lt;http://reference.data.gov.uk/id/year/2014&gt;;
-       dct:spatial &lt;http://www.geonames.org/3399415&gt;;
+              <p> The example below shows the machine readable metadata for the
+            bus stops dataset (<code>:bus-stops-2015-05-05</code>) with the inclusion of the <strong> locale
+                  parameters </strong> metadata. The property <code>dct:language</code> is used to declare the languages the dataset is published in. If the dataset is available in multiple languages,
+                use multiple values for this property [[VOCAB-DCAT]]. The property <a href="  http://purl.org/dc/terms/conformsTo"> dct:conformsTo </a> is used to specify the standard adopted for date and time formats. </p>
+              <pre class="highlight">  :bus-stops-05-05-2015
+       a dcat:Dataset ;
+       dct:title "Bus stops of MyCity" ;
+       dcat:keyword "transport","mobility","bus" ;
+       dct:issued "2015-05-05" ;
+       dcat:contactPoint &lt;http://data.mycity.example.com/public-transport/contact&gt; ;
+       dct:temporal &lt;http://reference.data.gov.uk/id/year/2015&gt; ;
+       dct:spatial &lt;http://www.geonames.org/3399415&gt; ;
        dct:publisher :transport-agency-mycity ;
-       dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt;;
-       dcat:theme :mobility;
-       dcat:distribution :timetable-001-csv;
-       <strong>dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt;;</strong>
-       <strong>dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/pt&gt;;</strong>
+       dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt; ;
+       dcat:theme :mobility ;
+       dcat:distribution :bus-stops-05-05-2015.csv ;
+       <strong>dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt; ;</strong>
+       <strong>dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/pt&gt; ;</strong>
+       <strong>dct:conformsTo "ISO 8601" ; </strong>
        .
 </pre>
-              <p>To declare the languages of the dataset is published using the
-                <code>dct:language</code>. If the dataset is available in multiple languages,
-                use multiple values for this property [[VOCAB-DCAT]]. <!-- As proposed
+               <!-- As proposed
                 in Dataset Descriptions from HCLS Community [[HCLS-DATASET]]
-                values were taken from the Lexvo.org Ontology [[Lexvo]]. --></p>
-              <div class="note">to include date and numbers formats!</div>
-              <div class="issue">DCAT has a property to describe language, but
-                there are no properties to describe date, time and numeric
-                formats. Which vocabulary should be used to provide this type of
-                metadata? This is <a href="https://www.w3.org/2013/dwbp/track/issues/167">Issue-167</a>.</div>
+                values were taken from the Lexvo.org Ontology [[Lexvo]]. -->
+              
               <h5>Human-readable</h5>
               <p><a href="dwbp-example.html">Example page</a> with
                 human-readable description of dataset is available.</p>
@@ -1070,7 +1190,8 @@ table.bptable caption {
           </section>
           <section class="outcome">
             <p class="subhead">Intended Outcome</p>
-            <p>Humans should be able to interpret the schema of a dataset as well as software agents should be able to automatically process the structural metadata of the dataset distributions</p>
+            <p>Humans should be able to interpret the schema of a dataset as well as software agents should be able to automatically process the structural metadata of the dataset 
+            distributions.</p>
           </section>
           <section class="how">
             <p class="subhead">Possible Approach to Implementation</p>
@@ -1089,17 +1210,13 @@ table.bptable caption {
             </ul>
             <aside class="example">
               <h5>Machine-readable</h5>
-              <p> The example below presents the structural metadata for one of
-                the CSV files (bus stops) that compose the CSV distribution of
-                the Bus Timetable dataset. For more details about the
-                composition of the CSV distribution see <a href="#MachineReadableStandardizedFormat">
-                  Use machine-readable standardized data formats</a>.</p>
-              <pre class="highlight">http://example.org/stops.csv-metadata.json
+              <p> John used the <a href = https://www.w3.org/TR/2015/REC-tabular-data-model-20151217/> Model for Tabular Data and Metadata on the Web  </a> for publishing the CSV distribution of the bus stops dataset (<code>:bus-stops-2015-05-05.csv</code>). The example below presents the structural metadata for this distribution .</p>
+              <pre class="highlight">
 
 {
   "@context": ["http://www.w3.org/ns/csvw", {"@language": "en"}],
-  "url": "https://example.org/stops.csv",
-  "dc:title": "Bus stops from bus timetable of MyCity",
+  "url": "http://data.mycity.example.com/public-transport/road/bus/dataset/bus-stops-05-05-2015.csv",
+  "dc:title": "CSV distribution of bus-stops-05-05-2015 dataset",
   "dcat:keyword": ["bus", "stop", "mobility"],
   "dc:publisher": {
     "schema:name": "Transport Agency of MyCity",
@@ -1227,22 +1344,20 @@ table.bptable caption {
             including:
             <ul>
               <li>The Creative Commons Rights Expression Language [[ccREL]]</li>
-              <li>The Open Digital Rights Language [[ODRL2]]</li>
-              <li>The Open Data Rights Statement Vocabulary [[ODRS]].</li>
+              <li>The Open Digital Rights Language [[ODRL]]</li>
+              <li>The Open Data Rights Statement Vocabulary [[ODRS]]</li>
             </ul>
             <!-- <p>Links to the license can be provided from the data itself, from
                 an HTML page that describes the data (via a Link element), or                via an HTTP Link Header, the latter two with a <code>@rel</code>                value of <code>license</code>. </p>                Further information about open data licensing can be found in                the Publisher's Guide to Open Data Licensing, published by the                Open Data Institute [[ODI-LICENSING]]. -->
             <aside class="example">
               <h5>Machine-readable</h5>
-              <p> The example below shows the machine readable metadata for
-                :timetable-001-csv with the inclusion of the <strong> data
-                  license </strong> information. </p>
-              <pre class="highlight">:timetable-001-csv
-   a dcat:Distribution;
-   dct:title "CSV distribution MyCity_busTimetable dataset."
-   dct:description "CSV distribution of the bus timetable dataset of MyCity."
-   dcat:mediaType "text/csv";
-   <strong>dct:license &lt;http://creativecommons.org/licenses/by-sa/3.0/&gt;</strong>;
+              <p> The CSV distribution of the bus stops dataset (<code>:bus-stops-05-05-2015.csv</code>) will be published under the <a href= "http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-ShareAlike 3.0 Unported</a> license. The property <code>dct:license</code> is used to include this information as part of the distribution metadata. </p>
+              <pre class="highlight">:bus-stops-05-05-2015.csv
+   a dcat:Distribution ;
+   dct:title "CSV distribution of bus-stops-05-05-2015 dataset" ;
+   dct:description "CSV distribution of the bus stops dataset of MyCity" ;
+   dcat:mediaType "text/csv" ;
+   <strong>dct:license &lt;http://creativecommons.org/licenses/by-sa/3.0/&gt;</strong> ;
    .
 </pre>
               <h5>Human-readable</h5>
@@ -1301,7 +1416,7 @@ table.bptable caption {
         <div class="practice">
           <p><span id="DataProvenance" class="practicelab">Provide data
               provenance information</span></p>
-          <p class="practicedesc">Data provenance information should should be
+          <p class="practicedesc">Data provenance information should be
             available. </p>
           <section class="axioms">
             <p class="subhead">Why</p>
@@ -1321,42 +1436,40 @@ table.bptable caption {
           </section>
           <section class="how">
             <p class="subhead">Possible Approach to Implementation</p>
-            <p>The machine readable version of the data provenance may be
-              provided according to the ontology recommended by W3C to describe
-              provenance information, i.e., the Provenance Ontology [[PROV-O]].
+            <p>The machine readable version of the data provenance can be
+              provided using an ontology recommended to describe provenance information, such as W3C's Provenance Ontology [[PROV-O]].
             </p>
             <!--
               <ol>                <li>Use an appropriate level of detail that will be meaningful                  to the intended audience. </li>                <li>Write the data provenance in either a machine readable form                  such as Turtle or RDF/XML or embed provenance in an HTML page                  using [[JSON-LD]], or [[HTML-RDFA]] </li>                <li>Verify that the data provenance references published data</li>              </ol> -->
             <aside class="example">
               <h5>Machine-readable</h5>
               <p> The example below shows the machine readable metadata for the
-                Bus Timetable dataset (timetable-001) with the inclusion of the
+                bus stops dataset (bus-stops) with the inclusion of the
                 <strong>provenance</strong> metadata. The metadata specifies
-                that John created the Bus Timetable dataset. </p>
-              <pre class="highlight">:timetable-001
-  a dcat:Dataset, prov:Entity;
-  dct:title "Bus timetable of MyCity";
-  dcat:keyword "transport","mobility" ,"bus";
-  dct:issued "2015-05-05";
-  dct:modified "2015-05-05";
-  dcat:contactPoint &lt;http://example.org/transport-agency/contact&gt;;
-  dct:temporal &lt;http://reference.data.gov.uk/id/year/2014&gt;;
-  dct:spatial &lt;http://www.geonames.org/3399415&gt;;
-  dct:publisher:transport-agency-mycity ;
+                that John created the bus stops dataset. The property <a href = " https://www.w3.org/TR/2013/REC-prov-o-20130430/#actedOnBehalfOf"> prov:actedOnBehalfOf </a> is used to designate that John acted on behalf of the Transport Agency of MyCity.</p>
+              <pre class="highlight">:bus-stops-05-05-2015
+  a dcat:Dataset, prov:Entity ;
+  dct:title "Bus stops of MyCity" ;
+  dcat:keyword "transport","mobility","bus" ;
+  dct:issued "2015-05-05" ;
+  dcat:contactPoint &lt;http://data.mycity.example.com/public-transport/contact&gt; ;
+  dct:temporal &lt;http://reference.data.gov.uk/id/year/2015&gt; ;
+  dct:spatial &lt;http://www.geonames.org/3399415&gt; ;
+  dct:publisher :transport-agency-mycity ;
   dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt; ;
   dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt; ;
-  <strong>prov:wasAttributedTo :john; </strong>
+  <strong>dct:creator :john ; </strong>
   .
 
 :john
-  a foaf:Person, prov:Agent;
-  foaf:givenName "John";
-  foaf:mbox &lt;mailto:john@mycitytransport.org&gt;;
-  prov:actedOnBehalfOf :transport-agency-mycity;
+  a foaf:Person, prov:Agent ;
+  foaf:givenName "John" ;
+  foaf:mbox &lt;mailto:john@mycitytransport.org&gt; ;
+  <strong>prov:actedOnBehalfOf :transport-agency-mycity ; </strong>
  .
 :transport-agency-mycity
-  a foaf:Organization, prov:Agent;
-  foaf:name "Transport Agency of Mycity";
+  a foaf:Organization, prov:Agent ;
+  foaf:name "Transport Agency of Mycity" ;
   .
 
 </pre>
@@ -1364,9 +1477,7 @@ table.bptable caption {
               <!--<p><a href="dwbp-example.html">Example page</a> with
                 human-readable data provenance information.</p> -->
               <p> to be done.</p>
-              <div class="issue"> Should we include a more complex example to
-                illustrate provenance? <a href="https://www.w3.org/2013/dwbp/track/issues/220">
-                  Issue-220 </a> </div>
+
             </aside>
           </section>
           <section class="test">
@@ -1455,28 +1566,28 @@ table.bptable caption {
             <aside class="example">
               <h5>Machine-readable</h5>
               <p> The example below shows the metadata for the CSV distribution
-                of the Bus Timetable dataset with the inclusion of the data
+                of the bus stops dataset with the inclusion of the data
                 quality metadata. The metadata was defined according to the Data
                 Quality Vocabulary. Further  examples can be found in the Data
                 Quality Vocabulary document [[DQV]]. </p>
-              <pre class="highlight">:timetable-001-csv
+              <pre class="highlight">:bus-stops-05-05-2015.csv
    a dcat:Distribution ;
-   dcat:downloadURL &lt;http://example.org/bus_timetables_mycity.csv&gt;
-   dct:title "CSV distribution MyCity_busTimetable dataset." ;
-   dct:description "CSV distribution of the bus timetable dataset of MyCity." ;
+   dcat:downloadURL &lt;http://data.mycity.example.com/public-transport/road/bus/dataset/bus-stops-05-05-2015.csv&gt; ;
+   dct:title "CSV distribution of bus-stops-05-05-2015 dataset" ;
+   dct:description "CSV distribution of the bus stops dataset of MyCity" ;
    dcat:mediaType "text/csv" ;
    dct:license &lt;http://creativecommons.org/licenses/by-sa/3.0/&gt; ;
    <strong>dqv:hasQualityMeasurement :measure1, :measure2 </strong>
 	.
 :measure1
 	a dqv:QualityMeasurement ;
-	dqv:computedOn :timetable-001-csv ;
+	dqv:computedOn :bus-stops.csv ;
 	dqv:metric :downloadURLAvailabilityMetric ;
 	dqv:value "true"^^xsd:boolean
 	.
 :measure2
 	a dqv:QualityMeasurement ;
-	dqv:computedOn :timetable-001-csv ;
+	dqv:computedOn :bus-stops.csv ;
 	dqv:metric :csvCompletenessMetric ;
 	dqv:value "0.5"^^xsd:double
 	.
@@ -1508,9 +1619,7 @@ table.bptable caption {
               <h5>Human-readable</h5>
                <p><a href="dwbp-example.html">Example page</a> with
                 human-readable data quality information.</p>
-              <div class="note"> This example is not definitive. It will change
-                according to the updates on the Data Quality Vocabulary [[DQV]].
-              </div>
+              
             </aside>
           </section>
           <section class="test">
@@ -1556,11 +1665,11 @@ table.bptable caption {
           In the following, we present some scenarios where most publishers would agree that
           the revision should be considered a new version of the existing dataset. </p>
         <ul>
-          <li> Scenario 1: a new bus stop is created and its timetable needs to be added to the dataset;</li>
-          <li> Scenario 2: an existing bus stop is removed and its timetable
+          <li> Scenario 1: a new bus stop is created and it should to be added to the dataset;</li>
+          <li> Scenario 2: an existing bus stop is removed and it
             should be deleted from the dataset;</li>
           <li> Scenario 3: an error was identified in one of the existing
-            timetables stored in the dataset and this error must be corrected.</li>
+            bus stops stored in the dataset and this error must be corrected.</li>
         </ul>
         <p> In general, multiple datasets that represent time series or
           spatial series, e.g. the same kind of data for different regions
@@ -1570,7 +1679,7 @@ table.bptable caption {
           collects data about weekly weather forecasts for a given city, where
           every week a new dataset is created to store data about that
           specific week. </p>
-        <p>Scenarios 1 and 2 might trigger a major version, whereas Scenario 1 would likely trigger only a minor version.
+        <p>Scenarios 1 and 2 might trigger a major version, whereas Scenario 3 would likely trigger only a minor version.
           But how you decide whether versions are minor or major is less important than that you avoid making
           changes without incrementing the version indicator. Even for small changes, it is important to keep track of the
           different dataset versions to make the dataset trustworthy. Publishers
@@ -1638,64 +1747,65 @@ table.bptable caption {
               number of annotation properties for version information.</p>
             <aside class="example">
               <h5>Machine-readable</h5>
-              <p> The example below shows the metadata for timetable-001 with
+              <p> The example below shows the metadata for bus-stops with
                 the inclusion of the <strong>versioning</strong> metadata. </p>
-              <pre class="highlight">:timetable-001
-  a dcat:Dataset, prov:Entity, version:VersionedThing;
-  dct:title "Bus timetable of MyCity";
-  dcat:keyword "transport","mobility" ,"bus";
+              <pre class="highlight">:bus-stops
+  a dcat:Dataset;
+  dct:title "Bus stops of MyCity";
+  dcat:keyword "transport","mobility","bus";
   dct:issued "2015-05-05";
-  dct:modified "2015-05-05";
   dcat:contactPoint &lt;http://example.org/transport-agency/contact&gt;;
   dct:temporal &lt;http://reference.data.gov.uk/id/year/2014&gt;;
   dct:spatial &lt;http://www.geonames.org/3399415&gt;;
-  dct:publisher:transport-agency-mycity ;
-  dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt; ;
-  dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt;
+  dct:publisher :transport-agency-mycity;
+  dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt;;
+  dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt;;
   prov:wasAttributedTo :john;
-  <strong>pav:version "1.0"; </strong> </pre>
+  <strong>owl:versionInfo "1.0"; </strong>
+  <strong>pav:version "1.0". </strong>
+   </pre>
               <strong>Using Memento</strong>
               <p> Assume: </p>
               <ul>
                 <li> http://example.org/dataset is the “generic URI” at which
                   the current version of a dataset is always available </li>
-                <li> http://example.org/timetable-002 is the versioned URI for
+                <li> http://example.org/bus-stops-002 is the versioned URI for
                   the current dataset </li>
-                <li> http://example.org/timetable-001 is the versioned URI of
+                <li> http://example.org/bus-stops-001 is the versioned URI of
                   the prior version of the dataset </li>
-                <li> http://example.org/timetable-000 is the versioned URI of
+                <li> http://example.org/bus-stops-000 is the versioned URI of
                   the first version of the dataset </li>
               </ul>
               <p> In the Memento protocol, the versioned URIs provide HTTP
                 response header information to express their version datetime
                 and their relation to the generic URI: </p>
-              <pre class="highlight">curl -I http://example.org/timetable-001
+              <pre class="highlight">curl -I http://example.org/bus-stops-001
 
 HTTP/1.1 200 OK
 Memento-Datetime: Sun, 05 April 2015 00:00:00 GMT
-Link: &lt;http://example.org/timetable&gt;; rel=“original” </pre>
+Link: &lt;http://example.org/bus-stops&gt;; rel=“original” </pre>
               <p> The versioned URIs can provide a link to a TimeGate, which
                 supports datetime negotiation as a means to determine which
                 version of a dataset was operational at a given datetime: </p>
-              <pre class="highlight">curl -I http://example.org/timetable-001
+              <pre class="highlight">curl -I http://example.org/bus-stops-001
 
 HTTP/1.1 200 OK
 Memento-Datetime: Sun, 05 April 2015 00:00:00 GMT
-Link:&lt;http://example.org/timetable&gt;; rel=“original”,
-&lt;http://example.org/timegate/timetable&gt;; rel=“timegate” </pre>
+Link:&lt;http://example.org/bus-stops&gt;; rel=“original”,
+&lt;http://example.org/timegate/bus-stops&gt;; rel=“timegate” </pre>
               <p> The generic URI can also provide a link to a TimeGate: </p>
-              <pre class="highlight">curl -i -H http://example.org/timetable
+              <pre class="highlight">curl -i -H http://example.org/bus-stops
 
 HTTP/1.1 200 OK
-Link: &lt;http://example.org/timegate/timetable&gt;; rel=“timegate” </pre>
+Link: &lt;http://example.org/timegate/bus-stops&gt;; rel=“timegate” </pre>
               <p>This is how a client determines which dataset version was
                 operational on March 20 2015: </p>
               <pre class="highlight">curl -I -H "Accept-Datetime: Fri, 20 Mar 2015  12:00:00 GMT" http://example.org/timegate/dataset
 
 HTTP/1.1 302 Found
 Vary: accept-datetime
-Location: http://example.org/timetable-000
-Link: &lt;http://example.org/timetable&gt; rel="original" </pre>
+Location: http://example.org/bus-stops-000
+Link: &lt;http://example.org/bus-stops&gt; rel="original" </pre>
               <h5>Human-readable</h5>
               <p><a href="dwbp-example.html">Example page</a> with
                 human-readable data versioning information.</p>
@@ -1756,31 +1866,30 @@ Link: &lt;http://example.org/timetable&gt; rel="original" </pre>
               versioning history? This is <a href="https://www.w3.org/2013/dwbp/track/issues/168">Issue-168</a></div>-->
             <aside class="example">
               <h5> Machine-readable</h5>
-              <p> Suppose that a new bus stop was created and its timetable
-                doesn't exist in timetable-001. To keep
-                timetable-001 up to date, a new version of the dataset (timetable-002) was
-                created. Timetable-002 includes all the data from timetable-001
+              <p> Suppose that a new bus stop was created. To keep
+                bus-stops-001 up to date, a new version of the dataset (bus-stops-002) was
+                created. bus-stops-002 includes all the data from bus-stops-001
                 plus the data about the new bus stop. The machine readable
-                metadata for timetable-002 is shown below. </p>
-              <pre class="highlight">:timetable-002
-       a dcat:Dataset, version:Version;
-       dct:title "Bus timetable of MyCity";
-       dcat:keyword "transport","mobility" ,"bus";
-       dct:issued "2015-05-06"^^xsd:date';
-       dct:modified "2015-05-06"^^xsd:date';
+                metadata for bus-stops-002 is shown below. </p>
+              <pre class="highlight">:bus-stops-002
+       a dcat:Dataset;
+       dct:title "Bus stops of MyCity";
+       dcat:keyword "transport","mobility","bus";
+       dct:issued "2015-05-06"^^xsd:date;
        dcat:contactPoint &lt;http://example.org/transport-agency/contact&gt;;
        dct:temporal &lt;http://reference.data.gov.uk/id/year/2014&gt;;
        dct:spatial &lt;http://www.geonames.org/3399415&gt;;
-       dct:publisher:transport-agency-mycity ;
-       dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt; ;
-       dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt;
+       dct:publisher :transport-agency-mycity;
+       dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt;;
+       dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt;;
        ...
-       <strong>dct:isVersionOf:timetable-001;
-       pav:previousVersion:timetable-001;
-       rdfs:comment "The timetable was updated to reflect the creation of a new bus stop at 1115 Pearl Street."
+       <strong>dct:isVersionOf :bus-stops;
+       pav:previousVersion: bus-stops-001;
+       rdfs:comment "The bus stops dataset was updated to reflect the creation of a new bus stop at 1115 Pearl Street.";
+       owl:versionInfo "1.1";
        pav:version "1.1". </strong>
 </pre>
-              <p> Versioning metadata for timetable-001 after the creation of
+       <!--       <p> Versioning metadata for timetable-001 after the creation of
                 timetable-002, which is a new version of timetable-001. </p>
               <pre class="highlight">:timetable-001
        a dcat:Dataset, version:VersionedThing;
@@ -1794,59 +1903,61 @@ Link: &lt;http://example.org/timetable&gt; rel="original" </pre>
        dct:publisher:transport-agency-mycity ;
        dct:accrualPeriodicity &lt;http://purl.org/linked-data/sdmx/2009/code#freq-A&gt; ;
        dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt;
-       prov:wasAttributedTo:john; -->
+       prov:wasAttributedTo:john; 
        ...
-       <strong>version:currentVersion:timetable-002;
+       <strong>pav:hasCurrentVersion :timetable-002;
        dct:hasVersion :timetable-002;
-       pav:version "1.0". </strong> </pre>
+       owl:versionInfo "1.0";
+       pav:version "1.0". </strong> -->
+
               <p> <strong> Using Memento:</strong> </p>
               Assume:
               <ul>
-                <li> <code>http://example.org/timetable</code> is the “generic
+                <li> <code>http://example.org/bus-stops</code> is the “generic
                   URI” at which the current version of a dataset is always
                   available </li>
-                <li> <code>http://example.org/timetable-002</code> is the
+                <li> <code>http://example.org/bus-stops-002</code> is the
                   versioned URI for the current dataset </li>
-                <li> <code>http://example.org/timetable-001</code> is the
+                <li> <code>http://example.org/bus-stops-001</code> is the
                   versioned URI of the prior version of the dataset </li>
-                <li> <code>http://example.org/timetable-000</code> is the
+                <li> <code>http://example.org/bus-stops-000</code> is the
                   versioned URI of the first version of the dataset </li>
               </ul>
               <p> The versioned URIs, the generic URI, and the TimeGate can
                 provide a link to a TimeMap that provides an overview of all
                 temporal versions of the dataset: </p>
-              <pre class="highlight">curl -I http://example.org/timetable-001
+              <pre class="highlight">curl -I http://example.org/bus-stops-001
 
 HTTP/1.1 200 OK
 Date: Sat, 24 Oct 2015 16:23:30 GMT
 Memento-Datetime: Sun, 05 April 2015 00:00:00 GMT
-Link: &lt;http://example.org/timetable&gt;; rel=“original”,
- &lt;http://example.org/timemap/timetable&gt;; rel=“timemap”;
+Link: &lt;http://example.org/bus-stops&gt;; rel=“original”,
+ &lt;http://example.org/timemap/bus-stops&gt;; rel=“timemap”;
 type="application/link-format"
 
-curl -I http://example.org/timemap/timetable
+curl -I http://example.org/timemap/bus-stops
 
 HTTP/1.1 200 OK
 Content-Type: application/link-format
 
-&lt;http://example.org/timetable&gt;;rel="original”,
-&lt;http://example.org/timedate/timetable&gt;;rel="timegate”,
-&lt;http://example.org/timedate/timetable&gt;;rel="timemap”;
+&lt;http://example.org/bus-stops&gt;;rel="original”,
+&lt;http://example.org/timedate/bus-stops&gt;;rel="timegate”,
+&lt;http://example.org/timedate/bus-stops&gt;;rel="timemap”;
 type="application/link-format",
-&lt;http://example.org/timetable-000&gt;; rel=“first memento"; datetime="Thu,05 Mar 2015 00:00:00 GMT",
-&lt;http://example.org/timetable-002&gt;; rel=“memento"; datetime=“Sun, 05 Apr2015 00:00:00 GMT"
-&lt;http://example.org/timetable-002&gt;; rel=“last memento"; datetime="Tue,05 May 2015 00:00:00 GMT"
+&lt;http://example.org/bus-stops-000&gt;; rel=“first memento"; datetime="Thu,05 Mar 2015 00:00:00 GMT",
+&lt;http://example.org/bus-stops-002&gt;; rel=“memento"; datetime=“Sun, 05 Apr2015 00:00:00 GMT"
+&lt;http://example.org/bus-stops-002&gt;; rel=“last memento"; datetime="Tue,05 May 2015 00:00:00 GMT"
 </pre>
               <p> The versioned URI can provide information regarding relations
                 with other dataset versions: </p>
-              <pre class="highlight">curl -I http://example.org/timetable-001
+              <pre class="highlight">curl -I http://example.org/bus-stops-001
 
 HTTP/1.1 200 OK
 Memento-Datetime: Sun, 05 April 2015 00:00:00 GMT
-Link: &lt;http://example.org/timetable&gt;; rel=“original”,
-&lt;http://example.org/timetable-000&gt;; rel=“prev first memento";
+Link: &lt;http://example.org/bus-stops&gt;; rel=“original”,
+&lt;http://example.org/bus-stops-000&gt;; rel=“prev first memento";
 datetime="Thu, 05 Mar 2015 00:00:00 GMT",
-&lt;http://example.org/timetable-002&gt;; rel=“next last memento";
+&lt;http://example.org/bus-stops-002&gt;; rel=“next last memento";
 datetime="Tue, 05 May 2015 00:00:00 GMT"
 </pre>
               <h5>Human-readable</h5>
@@ -1875,59 +1986,7 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
           </section>
         </div>
         <!-- end of provide version history BP -->
-        <!-- begin of avoid breaking changes at APIs -->
-        <div class="practice">
-          <p><span id="provideVersioningInfo" class="practicelab">Avoid Breaking Changes to Your API</span></p>
-          <p class="practicedesc">Avoid changes to your API that break client code, and communicate any changes in your API to your developers when evolution happens. </p>
-          <section class="axioms">
-            <p class="subhead">Why</p>
-            <p>When developers implement a client for your API, they may rely on specific characteristics that you have built into it, such as the schema or the format of a response. Avoiding breaking changes in your API minimizes breakage to client code. Communicating changes when they do occur enables developers to take advantage of new features and, in the rare case of a breaking change, take action. </p>
-          </section>
-          <section class="outcome">
-            <p class="subhead">Intended Outcome</p>
-            <p>Developer code will continue to work. Developers will know of improvements you make and be able to make use of them. Breaking changes to your API will be rare, and if they occur, developers will have sufficient time and information to adapt their code. That will enable them to avoid breakage, enhancing trust.</p>
-          </section>
-          <section class="how">
-            <p class="subhead">Possible Approach to Implementation</p>
-          <p>When improving your API, focus on adding new calls or new, unrequired options rather than changing how existing calls work. Existing clients can ignore such changes and will continue functioning.</p>
-            <p>If using a fully RESTful style, you should be able to avoid changes that affect developers by keeping home resource URIs constant and changing only elements that your users do not code to directly. If you need to change your data in ways that are not compatible with the extension points that you initially designed, then a completely new design is called for, and that means changes that break client code. In that case, it’s best to implement the changes as a new REST API, with a different home resource URI. </p>
-          <p>If using an architectural style that does not allow you to make moderately significant changes without breaking client code, use versioning. Indicate the version in the response header. Version numbers should be reflected in your URIs or in request "accept" headers (using content negotiation). When versioning in URIs, include the version number as far to the left as possible. Keep the previous version available for developers whose code has not yet been adapted to the new version.</p>
-          <aside class="example">Some examples of breaking changes to an API include
-            <ul>
-              <li>Removing a call;</li>
-              <li>Changing the method used to make a call;</li>
-              <li>Changing the URI of a resource used in a call;</li>
-              <li>Adding a required parameter for a call;</li>
-              <li>Changing the data type of a parameter;</li>
-              <li>Changing the name of a key in a key-value response;</li>
-              <li>Changing the structure of an XML response</li>
-              <li>Changing the data type of a value in a response, such as changing a string to an array;</li>
-            </ul>
-          </aside>
-          <p>Changes to the API should be announced on your API documentation site. To notify users directly of changes, it's a good idea to create a mailing list and encourage developers to join. You can then announce changes there, and this provides a nice mechanism for feedback as well. It also allows your users to help each other.</p>
-          </section>
-          <section class="test">
-            <p class="subhead">How to Test</p>
-            <p>Release changes initially to a test version of your API before applying them to the production version. Invite developers to test their applications on the test version and provide feedback.</p>
-          </section>
-          <section class="ucr">
-            <p class="subhead">Evidence</p>
-            <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-PersistentIdentification">R-PersistentIdentification</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-APIDocumented">R-APIDocumented</a></p>
-          </section>
-         <section class="benefits">
-          <p class="subhead">Benefits</p>
-          <ul class="benefitsList">
-             <li>Trust</li><li>Interoperability</li> 
-            <!--              <li>Comprehension</li>
-            <li>Reuse</li>
-           <li>Linkability</li>              <li>Discoverability</li> -->
-            <!--              <li>Access</li>
-                         <li>Processability</li> -->
-          </ul>
-        </section>
-         <div class="note">This BP will be complemented.</div>
-        </div>
-        <!-- end of avoid breaking changes to APIs -->
+
       <!-- end of versioning section -->
       </section>
       <!-- begning of data identifier section -->
@@ -1970,6 +2029,9 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
               identification and comparison processes by any stakeholder in a
               reliable way. They are an essential pre-condition for proper data
               management and reuse.</p>
+            <p>Developers may build URIs into their code and so it is important 
+            that those URIs persist and that they dereference to the same 
+            resource over time without the need for human intervention.</p>
           </section>
           <section class="outcome">
             <p class="subhead">Intended Outcome</p>
@@ -1979,10 +2041,13 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
           </section>
           <section class="how">
             <p class="subhead">Possible Approach to Implementation</p>
-            <p>To be persistent, URIs must be designed as such and backed up by
-              organizational commitments. A lot has been written on this topic
-              as the table below shows. </p>
-            <table id="uripatternstable">
+            <p>To be persistent, URIs must be designed as such. This requires a 
+            different mindset to that used when creating a Web site designed 
+            for humans to navigate their way through. A lot has been 
+            written on this topic, see, for example, the European Commission's
+            Study on Persistent URIs [[PURI]] which in turn links to many other 
+            resources.</p>
+<!--            <table id="uripatternstable">
               <caption>Some sources of information related to URI persistence</caption>
               <tbody>
                 <tr>
@@ -2047,36 +2112,23 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
                   <td>Sarven Capadisli, 2012</td>
                 </tr>
               </tbody>
-            </table>
-            <div class="issue">The table links to Designing URI Sets for the UK
-              Public Sector. A newer version of this document (which was the
-              first of its kind) exists but is on a <a href="https://github.com/UKGovLD/URI-patterns-core/blob/master/URI%20Patterns.md">GitHub
-                repository</a>. It seems that this might happen due to changes in
-              organisation behind data.gov.uk. If this happens, we should update
-              the link to point to the new version.</div>
-            <p>URIs can be long. In a dataset of even moderate size, storing
-              each URI is likely to be repetitive and obviously wasteful.
-              Instead, define locally unique identifiers for each element and
-              provide data that allows them to be converted to globally unique
-              URIs programmatically. The Metadata Vocabulary for Tabular Data
-              [[tabular-metadata]] provides mechanisms for doing this within
-              tabular data such as CSV files, in particular using <a href="http://www.w3.org/TR/tabular-metadata/#uri-template-properties">URI
-                template properties</a> such as the <a href="http://www.w3.org/TR/tabular-metadata/#cell-aboutUrl">about
-                URL</a> property.</p>
-            <p>Where a data publisher is unable or unwilling to manage its URI
+            </table>-->
+            <p>Where a data publisher is unable or unwilling to manage a URI
               space directly for persistence, an alternative approach is to use
-              a redirection service such as <a href="http://purl.org/">purl.org</a>.
-              This provides persistent URIs that can be redirected as required
+              a redirection service such as 
+              <a href="https://w3id.org/">Permanent Identifiers for the Web</a> 
+              or <a href="http://purl.org/">purl.org</a>.
+              These provide persistent URIs that can be redirected as required
               so that the eventual location can be ephemeral. The <a href="http://www.purlz.org/">software
-                behind such services </a> is freely available so that it can be
+              behind such services </a> is freely available so that it can be
               installed and managed locally if required.</p>
-            <p>Digital Object Identifiers <a href="http://www.doi.org/">(DOIs)</a>
+            <p>Digital Object Identifiers (<a href="http://www.doi.org/">DOI</a>s)
               offer a similar alternative. These identifiers are defined
               independently of any Web technology but can be appended to a 'URI
               stub.' DOIs are an important part of the digital infrastructure
               for research data and and libraries. </p>
             <aside class="example">
-              <p>The URI <code>http://data.mycity.example/public-transport/road/bus/dataset/timetable</code>
+              <p>The URI <code>http://data.mycity.example/public-transport/road/bus/dataset/bus-stops</code>
                 has several features that support persistence:</p>
               <ul>
                 <li>All names are subject to change over time but in choosing a
@@ -2084,7 +2136,7 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
                   will continue to exist and that it will continue to have a
                   government. Therefore, while cases like Yugoslavia prove that
                   even country names change and top level domains disappear
-                  (like .yu), <code>mycity.gov</code> is as persistent as any
+                  (like .yu), a domain name based on the city's name is as persistent as any
                   domain name can be.</li>
                 <li>By putting data on the <code>data.mycity.example</code>
                   subdomain, John is creating a specific domain that can be
@@ -2102,21 +2154,20 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
                 <li>The <code>/dataset</code> path segment is an indication
                   that the URI identifies a dataset, rather than, say, a
                   specific bus route.</li>
-                <li>Finally <code>/timetable</code> leads us to the dataset
-                  concerning bus timetables in MyCity.</li>
+                <li>Finally <code>/bus-stops</code> leads us to the dataset
+                  concerning bus stops in MyCity.</li>
                 <li>In DCAT terms, this would be the identifier for the dataset.
                   Specific distributions of the dataset are likely to be
                   identified by adding the relevant file extension to the URI,
-                  such as <code>http://data.mycity.example/public-transport/road/bus/dataset/timetable.csv</code>,
-                  <code>http://data.mycity.example/public-transport/road/bus/dataset/timetable.json</code>,
-                  <code>http://data.mycity.example/public-transport/road/bus/dataset/timetable.ttl</code>
+                  such as <code>http://data.mycity.example/public-transport/road/bus/dataset/bus-stops.csv</code>,
+                  <code>http://data.mycity.example/public-transport/road/bus/dataset/bus-stops.json</code>,
+                  <code>http://data.mycity.example/public-transport/road/bus/dataset/bus-stops.ttl</code>
                   etc.</li>
               </ul>
-              <p>These points cover the design aspects of a persistent URI. To
+<!--              <p>These points cover the design aspects of a persistent URI. To
                 cover the organizational aspect, MyCity should publish
                 information about its URI design principles as well as a
-                commitment to maintain the service in the long term.</p>
-            </aside>
+                commitment to maintain the service in the long term.</p>-->
           </section>
           <section class="test">
             <p class="subhead">How to Test</p>
@@ -2197,14 +2248,23 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
             <ul>
               <li>ensure URI sets you use are published by a trusted group or
                 organization;</li>
-              <li>ensure URI sets have permanent URIs.</li>
+              <li>ensure URI sets have persistent URIs.</li>
             </ul>
             <p>If you can't find an existing set of identifiers that meet your
               needs then you'll need to create your own, following the patterns
               for URI persistence so that others will add value to your data by
               linking to it.</p>
+            <p>URIs can be long. In a dataset of even moderate size, storing
+              each URI is likely to be repetitive and obviously wasteful.
+              Instead, define locally unique identifiers for each element and
+              provide data that allows them to be converted to globally unique
+              URIs programmatically. The Metadata Vocabulary for Tabular Data
+              [[tabular-metadata]] provides mechanisms for doing this within
+              tabular data such as CSV files, in particular using <a href="http://www.w3.org/TR/tabular-metadata/#uri-template-properties">URI
+                template properties</a> such as the <a href="http://www.w3.org/TR/tabular-metadata/#cell-aboutUrl">about
+                URL</a> property.</p>
             <aside class="example">
-              <p>The URI given as an example in the previous Best Practice (<code>http://data.mycity.example/public-transport/road/bus/dataset/timetable</code>)
+              <p>The URI given as an example in the previous Best Practice (<code>http://data.mycity.example/public-transport/road/bus/dataset/bus-stops</code>)
                 identifies a dataset. Much of the URI can be reused to identify
                 bus stops, routes and the type of bus used on a given service.
                 For example, a suitable persistent URI for the 'Airport -
@@ -2234,7 +2294,6 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
                 in particular using <a href="http://www.w3.org/TR/tabular-metadata/#uri-template-properties">URI
                   template properties</a> such as the <a href="http://www.w3.org/TR/tabular-metadata/#cell-aboutUrl">about
                   URL</a> property.</p>
-            </aside>
           </section>
           <section class="test">
             <p class="subhead">How to Test</p>
@@ -2400,11 +2459,11 @@ datetime="Tue, 05 May 2015 00:00:00 GMT"
           of the publication of data about census. They decided to
           publish one dataset about usual resident population collected in the 2001 Census.
 A usual resident was generally defined as someone who spent most of their time at a specific address. This dataset shows both the 2001 population, the 1991 population, along with the rate of change, the split of the population between those living in households and those living in communal establishments, the size of the area in hectares, population density and the number of students away from home in the area.</p>
-              <pre class="highlight">   :census-001
+              <pre class="highlight">   :census
        a dcat:Dataset;
-       dcat:distribution :census-001-csv;
+       dcat:distribution :census.csv;
        .
-   :census-001-csv
+   :census.csv
        a dcat:Distribution;
        dcat:downloadURL &lt;http://data.mycity.example/census/2001/population.csv&gt;;
        dct:title "CSV distribution of the usual resident population of MyCity, collected in the 2001 Census.";
@@ -2470,17 +2529,17 @@ A usual resident was generally defined as someone who spent most of their time a
                 dataset.</p>
               <pre class="highlight">  :census-001
        a dcat:Dataset;
-       dcat:distribution :census-001-csv;
-       dcat:distribution :census-001-xml;
+       dcat:distribution :census.csv;
+       dcat:distribution :census.xml;
        .
-   :census-001-csv
+   :census.csv
        a dcat:Distribution;
        dcat:downloadURL &lt;http://data.mycity.example/census/2001/population.csv&gt;;
        dct:title "CSV distribution of the usual resident population of MyCity, collected in the 2001 Census.";
        dcat:mediaType "text/csv";
        dct:license &lt;http://reference.data.gov.uk/id/open-government-licence&gt;;
        .
-   :census-001-xml
+   :census.xml
        a dcat:Distribution;
        dcat:downloadURL &lt;http://data.mycity.example/census/2001/population.xml&gt;;
        dct:title "XML distribution of the usual resident population of MyCity, collected in the 2001 Census.";
@@ -2569,7 +2628,7 @@ A usual resident was generally defined as someone who spent most of their time a
           <section class="axioms">
             <p class="subhead">Why</p>
             <p>Using standardized lists of codes other commonly used terms for data
-              and metadata values as much as possible helps avoiding 
+              and metadata values as much as possible helps avoiding
               ambiguity and clashes between these values.</p>
           </section>
           <section class="outcome">
@@ -2585,13 +2644,13 @@ A usual resident was generally defined as someone who spent most of their time a
               clear reference.</p>
             <p>Organizations like the Open Geospatial Consortium (OGC), ISO, W3C, libraries and research data services, etc., provide
               list of codes, terminologies or even Linked Data vocabularies that can be used for this.</p>
-            <p>A key point is to make sure the dataset or its documentation provides enough (human- and machine-readable) context 
+            <p>A key point is to make sure the dataset or its documentation provides enough (human- and machine-readable) context
               for the values, so that data consumers can retrieve and exploit the standardized meaning
               of these values. In the context of the Web, using unambiguous, web-based identifiers for standardized values
               is an efficient way to do this.</p>
             <aside class="example">
             <p>1. The Library of Congress publishes lists of ISO 639 country codes as Linked Data (see [[ISO639-1-LOC]] for two-letter codes):</p>
-<pre style="" class="highlight prettyprint prettyprinted">:timetable-001
+<pre style="" class="highlight prettyprint prettyprinted">:bus-stops
     dct:language &lt;http://id.loc.gov/vocabulary/iso639-1/en&gt; .
 </pre>
             <p>2. The <a href="http://www.bodc.ac.uk/products/web_services/">British Oceanographic Data Center Web Services</a> publishes a reference list of URIs for types of tools to perform scientific measures, such as <code>http://vocab.nerc.ac.uk/collection/L05/current/357/</code> for acoustic tracking systems:</p>
@@ -2600,7 +2659,7 @@ A usual resident was generally defined as someone who spent most of their time a
 :sensor-001 a prov:Agent ;
     dct:type &lt;http://vocab.nerc.ac.uk/collection/L05/current/357/&gt; .
 </pre>
-           <p>(note that real-life data should use more specific classes and properties than the PROV ones for 
+           <p>(note that real-life data should use more specific classes and properties than the PROV ones for
               typing a measurement activity, an instrument and the relationship between these)</p>
             <p>3. Australia's <a href="http://www.bodc.ac.uk/products/web_services/">Solid Earth and Environment Grid</a> publish a reference list of URIs for geologic timescale elements from the International Commission on Stratigraphy's Chronostratigraphic Chart, such as <code>http://resource.geosciml.org/classifier/ics/ischart/Paleozoic</code> for the Paleozoic Era:</p>
 <pre style="" class="highlight prettyprint prettyprinted">:dataset-005 a dcat:Dataset ;
@@ -2615,7 +2674,7 @@ A usual resident was generally defined as someone who spent most of their time a
 <pre style="" class="highlight prettyprint prettyprinted">
 0 - Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
 1 - Subway, Metro. Any underground rail system within a metropolitan area.
-2 - Rail. Used for intercity or long-distance travel. 
+2 - Rail. Used for intercity or long-distance travel.
 </pre>
               <p>Note that in a non-linked data fashion, these fields and codes have no individual Web identifiers nor machine-readable semantics.
              Exploiting them thus requires implementers to parse the documentation and encode interpretations in each individual application consuming the data.
@@ -2629,15 +2688,16 @@ A usual resident was generally defined as someone who spent most of their time a
           <section class="ucr">
             <p class="subhead">Evidence</p>
             <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-MetadataStandardized">R-MetadataStandardized</a>,
+              <a href="http://www.w3.org/TR/dwbp-ucr/#R-MetadataDocum">R-MetadataDocum</a>
               <a href="http://www.w3.org/TR/dwbp-ucr/#R-QualityComparable">R-QualityComparable</a></p>
           </section>
           <section class="benefits">
             <p class="subhead">Benefits</p>
             <ul class="benefitsList">
               <li>Reuse</li>
-              <li>Processability</li>
-              <!--              <li>Comprehension</li>
-          <li>Linkability</li>              <li>Discoverability</li>              <li>Trust</li>              <li>Access</li> -->
+              <li>Comprehension</li>
+              <!--<li>Linkability</li>  <li>Discoverability</li> -->
+              <li>Trust</li> <!-- <li>Access</li> -->
               <li>Interoperability</li>
             </ul>
           </section>
@@ -2645,86 +2705,83 @@ A usual resident was generally defined as someone who spent most of their time a
         <!-- end of Provide Metadata Standardized BP -->
         <!-- begin of Reuse vocabularies BP -->
         <div class="practice">
-          <p><span id="ReuseVocabularies" class="practicelab">Reuse
-              vocabularies</span></p>
-          <p class="practicedesc">Shared vocabularies should be used to provide
+          <p><span id="ReuseVocabularies" class="practicelab">Reuse vocabularies</span></p>
+          <p class="practicedesc">Shared vocabularies should be used to encode
             data and metadata</p>
           <section property="bibo:hasPart" resource="" typeof="bibo:Chapter" class="axioms">
             <p class="subhead">Why</p>
-            <p>Reusing vocabularies increases interoperability and reduces
-              redundancies, encouraging reuse of the data. Shared vocabularies
-              capture a consensus of the community about a specific domain. The
-              use of shared vocabularies in metadata (especially structural, provenance, quality
-              and versioning metadata) helps the
-              automatic processing of data and metadata.</p>
+            <p>Use of shared vocabularies captures and facilitates consensus in communities.
+              Reusing existing vocabularies to encode datasets and metadata increases interoperability and reduces
+              redundancies, encouraging reuse of these data. In particular, the
+              use of shared vocabularies for metadata (especially structural, provenance, quality
+              and versioning metadata) helps the automatic processing of both data and metadata.</p>
           </section>
           <section property="bibo:hasPart" resource="" typeof="bibo:Chapter" class="outcome">
             <p class="subhead">Intended Outcome</p>
-            <p> It should be possible to automatically compare two or more
-              datasets when they use the same vocabulary to describe metadata. </p>
-            <p> It should be possible for machines to automatically process the
-              data within a dataset. </p>
-            <p> It should be possible for machines to automatically process the
-              metadata that describes a dataset. </p>
+            <p>Datasets and metadata sets are easier to be compared by humans or machines when
+              they use the same vocabulary to describe metadata.</p>
+            <p>When two datasets or metadata sets use the same vocabulary, (automatic) processing tools
+              designed for one can be more easily applied to the other. This greatly facilitates re-use of datasets.</p>
           </section>
           <section property="bibo:hasPart" resource="" typeof="bibo:Chapter" class="how">
             <p class="subhead">Possible Approach to Implementation</p>
-            <p> The <a href="http://www.w3.org/TR/ld-bp/#VOCABULARIES">Standard
-                Vocabularies</a> section of the <abbr title="World Wide Web Consortium">W3C</abbr> Best Practices for
+            <p> The <a href="http://www.w3.org/TR/ld-bp/#VOCABULARIES">Vocabularies</a> section of the <abbr title="World Wide Web Consortium">W3C</abbr> Best Practices for
               Publishing Linked Data [<cite><a href="#bib-LD-BP" class="bibref">LD-BP</a></cite>] provides guidance on the
               discovery, evaluation and selection of existing vocabularies.</p>
             <aside class="example">
-	    <p>1. All examples in this document show how common vocabularies (PROV, SKOS, etc) can be reused 
+	    <p>1. All examples in this document show how common vocabularies (PROV, SKOS, etc) can be reused
               to express data and metadata statements, instead of minting entirely new classes and properties.</p>
-              <p>2. The DCAT vocabulary to express metadata on datasets [<cite><a href="#bib-VOCAB-DCAT" class="bibref">VOCAB-DCAT</a></cite>] 
-              re-uses elements from Dublin Core, FOAF, SKOS and vCard, see its 
-              <a href="https://www.w3.org/TR/vocab-dcat/#namespaces-1">namespaces</a> section. 
-              By reusing Dublin Core properties like <code>dct:title</code> instead of 
-              creating new ones like <code>dcat:title</code>, DCAT allows statements in DCAT-based metadata 
+              <p>2. The DCAT vocabulary to express metadata on datasets [<cite><a href="#bib-VOCAB-DCAT" class="bibref">VOCAB-DCAT</a></cite>]
+              re-uses elements from Dublin Core, FOAF, SKOS and vCard, see its
+              <a href="https://www.w3.org/TR/vocab-dcat/#namespaces-1">namespaces</a> section.
+              For example, reusing Dublin Core properties like <code>dct:title</code> instead of
+              creating new ones (say, <code>dcat:title</code>) enables DCAT-based metadata
               to be consumed by any application that can read and manipulate Dublin Core statements.</p>
-              <p>3. In the digital culture sector, the data model for the initiative 
-              <a href="http://europeana.eu">Europeana</a> (<a href="http://www.europeana.eu/schemas/edm/">EDM</a>) 
-              also massively re-uses existing shared vocabularies 
-              like Dublin Core, FOAF, SKOS, etc. This has facilitated adoption of the data model by Europeana's
-              data providers. It also helped position EDM as a best practice for similar initiatives in 
-              the sector, such as the <a href="http://dp.la">Digital Public Library of America</a> (DPLA). DPLA's 
-              <a href="http://dp.la/info/map/">metadata application profile</a> reuses EDM, and thus reuses 
-              the various vocabularies that EDM builds on. As a result, large amounts of 
-              digital culture data have become more interoperable within the sector. That data is 
+              <p>3. In the digital culture sector, the data model for the initiative
+              <a href="http://europeana.eu">Europeana</a> (<a href="http://www.europeana.eu/schemas/edm/">EDM</a>)
+              also widely re-uses existing shared vocabularies like Dublin Core, FOAF, SKOS, etc.
+              This has facilitated adoption of EDM by Europeana's data providers and helped
+              position it as a best practice for similar initiatives in the same sector.
+              For instance, <a href="http://dp.la/info/map/">metadata application profile</a> from the
+              <a href="http://dp.la">Digital Public Library of America</a> reuses EDM and thus
+              the various vocabularies that EDM builds on. As a result, large amounts of
+              digital culture data have become more interoperable within the sector. That data is
               also easier to reuse by consumers from other communities, who are not familiar
-              with the traditional models and terminologies for library, archive and museum data.</p>
+              with the traditional models and terminologies used by library, archives and museums.</p>
             </aside>
           </section>
           <section property="bibo:hasPart" resource="" typeof="bibo:Chapter" class="test"><span style="font-weight: bold;">How to Test </span>
-            <p>Check that classes, properties, terms or attributes used do not replicate those
-              defined by vocabularies in common use within the same domain.</p>
+            <p>Using vocabulary repositories like the <a href="http://lov.okfn.org">Linked Open Vocabularies repository</a>
+              or lists or services mentioned in technology-specific best practices
+              such as the Best Practices for Publishing Linked Data [<cite><a href="#bib-LD-BP" class="bibref">LD-BP</a></cite>],
+              or the <a href="https://www.w3.org/2011/rdfa-context/rdfa-1.1">Core Initial Context for RDFa and JSON-LD</a>,
+              check that classes, properties, terms, elements or attributes used to represent a dataset do not replicate those
+              defined by vocabularies used for other datasets.</p>
           </section>
           <section class="ucr">
             <p class="subhead">Evidence</p>
-            <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-MetadataStandardized">R-MetadataStandardized</a>,
+            <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-QualityComparable">R-QualityComparable</a>,
               <a href="http://www.w3.org/TR/dwbp-ucr/#R-VocabReference">R-VocabReference</a>
             </p>
             <p class="subhead">Benefits</p>
             <ul class="benefitsList">
               <li>Reuse</li>
               <li>Processability</li>
-              <!-- <li>Comprehension</li>
-                <li>Linkability</li>                <li>Discoverability</li>                <li>Trust</li>                <li>Access</li>-->
+              <!-- <li>Comprehension</li><li>Linkability</li><li>Discoverability</li><li>Trust</li><li>Access</li>-->
               <li>Interoperability</li>
             </ul>
           </section>
         </div>
       <!-- end of Reuse vocabularies BP -->
-      <!-- begin of Not Over formalize Vocabularies BP -->
+      <!-- begin of Choose the right formalization level BP -->
       <div class="practice">
-        <p><span id="ChoseRightFormalizationLevel" class="practicelab">Choose
-            the right formalization level</span></p>
+        <p><span id="ChooseRightFormalizationLevel" class="practicelab">Choose the right formalization level</span></p>
         <p class="practicedesc">When reusing a vocabulary, a data publisher
           should opt for a level of formal semantics that fit data and
           applications.</p>
         <section class="axioms">
           <p class="subhead">Why</p>
-          <p>Formal semantics may help one to establish precise specifications
+          <p>Formal semantics help to establish precise specifications
             that support establishing the intended meaning of the vocabulary and
             the performance of complex tasks such as reasoning. On the other
             hand, complex vocabularies require more effort to produce and
@@ -2751,14 +2808,43 @@ A usual resident was generally defined as someone who spent most of their time a
             the predicates for RDF statements, or elements in an XML Schema, as
             opposed to providing simple concepts or codes that are used for
             representing attributes of the resources described in a dataset.
-            When simpler models are enough to convey the necessary semantics,
-            represent vocabularies using them. For instance, for Linked Data,
-            SKOS may be preferred for simple vocabularies as opposed to formal
-            ontology languages like OWL; see for example how <a href="http://www.w3.org/TR/vocab-data-cube/#schemes">concept
-              schemes and code lists</a> are used in the RDF Data Cube
-            Recommendation [[VOCAB-DATA-CUBE]].</p>
+            When simpler data models are enough to convey the necessary semantics,
+            represent vocabularies using them.</p>
+          <p>Even when a language with rich formal semantics like OWL is used to
+            express a vocabulary, it is preferable that this vocabulary has a minimal
+            <emph>ontological commitment</emph>, i.e. by featuring only the formal axioms
+            that enable inferences and validation checks
+            that have been explicitly identified as relevant for the domain or application at hand.
+            The more axioms are used to specify a vocabulary, the narrower its usage is;
+            unnecessary axioms unnecessarily constrain the reuse of a vocabulary
+            across applications.</p>
           <aside class="example">
-            <pre>to be done</pre>
+          <p>1. For expressing simple vocabularies like thesauri or code lists as Linked Data,
+            a simpler data model like SKOS may be preferred over formal
+            ontology languages like OWL; see for example how <a href="http://www.w3.org/TR/vocab-data-cube/#schemes">concept
+              schemes and code lists</a> are represented and used in the RDF Data Cube
+            Recommendation [[VOCAB-DATA-CUBE]].</p>
+          <p>2. Designers of the SKOS ontology itself have minimized its ontological commitment by questioning
+            all formal axioms that were suggested for its classes and properties. Often they have been rejected
+            because their use, while beneficial to many applications, would have created
+            formal inconsistencies for the data from other applications, making SKOS not usable at all
+            for these. As an example, the property <code>skos:broader</code> was not defined
+            as a transitive property, even though it would have fit the way hierarchical links between concepts
+            are created for many thesauri [[SKOS-DESIGN]].</p>
+          <p>3. The vocabularies for Data Quality [[DQV]] and Data Usage [[DUV]] created by the W3C Working
+            Group publishing this document have also sought to minimize the number of formal
+            axioms involved in their definition. For instance, the property <code>dqv:hasQualityMeasurement</code>
+            has no formal domain in the RDFS/OWL sense, even though it is expected to be most often used with
+            resources that are of type <code>dcat:Dataset</code> or <code>dcat:Distribution</code>.
+            This allows application designers to employ it for other types of entities, for which
+            quality measurements would also be relevant but that were not in the focus of
+            the design process for DQV.</p>
+          <p>4. The <a href="http://schema.org">Schema.org</a> schemas for publishing structured
+            data on the web have adopted an informative rather than normative approach for defining
+            the types of objects these properties can be used with. For instance, the values of the property
+            <a href="http://schema.org/author"><code>author</code></a> are only "expected" to be
+            of type <code>Organization</code> or <code>Person</code>. <code>author</code> "can be used" on the
+            type <code>CreativeWork</code> but this is not a strict constraint.</p>
           </aside>
         </section>
         <section class="test">
@@ -2771,19 +2857,19 @@ A usual resident was generally defined as someone who spent most of their time a
         <section class="ucr">
           <p class="subhead">Evidence</p>
           <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-VocabReference">R-VocabReference</a>,
-            <a href="http://www.w3.org/TR/dwbp-ucr/#R-VocabDocum">R-VocabDocum</a>,
             <a href="http://www.w3.org/TR/dwbp-ucr/#R-QualityComparable">R-QualityComparable</a>
           </p>
         </section>
         <section class="benefits">
-          <p class="subhead">Benefits</p>
-          <p> to be done.</p>
+            <p class="subhead">Benefits</p>
+            <ul class="benefitsList">
+              <li>Reuse</li>
+              <li>Comprehension</li>
+              <!--<li>Linkability</li>  <li>Discoverability</li> <li>Trust</li> <li>Access</li> -->
+              <li>Interoperability</li>
+            </ul>
         </section>
-        <div class="issue">The best practice on formalization above (especially
-          sections "Intended outcome" and "How to test") should be re-written in a
-          more technology-neutral way. <a href="https://www.w3.org/2013/dwbp/track/issues/144">Issue-144</a></div>
-      </div>
-      <!-- end of Not Over formalize Vocabularies BP -->
+      <!-- end of Choose the right formalization level BP -->
     </section>
     <!-- end of Data Vocabularies -->
     <!-- begin of Sensitive Data -->
@@ -2840,7 +2926,7 @@ A usual resident was generally defined as someone who spent most of their time a
             appropriate, consider editing the server's 4xx response page(s) to
             provide the information.</p>
           <aside class="example">
-            <p>The datasets created for the bus timetables contain sensitive
+            <p>The datasets created for the bus stops contain sensitive
               data, for instance privacy information about the bus` driver, so
               it has a description informing that the personal data about the
               bus` driver is not available.</p>
@@ -2912,46 +2998,40 @@ A usual resident was generally defined as someone who spent most of their time a
         <p class="practicedesc">Data should be available for bulk download. </p>
         <section class="axioms">
           <p class="subhead">Why</p>
-          <p>When web data is distributed across many URLs and logically
-            organized as one container, accessing the data in bulk is useful.
+          <p>When web data is distributed across many URIs but might logically
+            be organized as one container, accessing the data in bulk can be useful.
             Bulk access provides a consistent means to handle the data as one
-            container. Without it, individually accessing data is cumbersome
-            leading to inconsistent approaches to handling the container.</p>
+            container. Individually accessing data over many retrievals can be cumbersome
+            and, if used to reassemble the complete dataset, can lead to inconsistent approaches to handling the data.</p>
         </section>
         <section class="outcome">
           <p class="subhead">Intended Outcome</p>
           <p> It should be possible to download data on the Web in bulk. Data
-            publishers should provide a way either through bulk file formats or
-            APIs for consumers to access this type of data.</p>
+            publishers should provide a way, through either a single-file download or
+            a single API call, for consumers to access all the data. Large file transfers (which would require more time than a typical user would consider reasonable) should be enabled by dedicated file-transfer protocols. The bulk download should include the metadata describing the dataset. Discovery metadata [[VOCAB-DCAT]] should also be available outside the bulk downlaod.
+            </p>
         </section>
         <section class="how">
           <p class="subhead">Possible Approach to Implementation</p>
-          <p>Depending on the nature of the data and consumer needs possible
-            approaches could include:</p>
+          <p>Depending on the nature of the data and consumer needs, possible
+            approaches could include the following:</p>
           <ul>
-            <li>Preprocessing a copy of the data in compressed archive format
-              where the data more easily accessible as one URL. This is
-              particularly useful for handling data that changes infrequently or
-              on a scheduled basis.</li>
-            <li>Hosting an API such as a REST or SOAP service that dynamically
-              retrieves individual data and returns a bulk container. This
-              approach is useful when for capturing a snapshot of the data. The
-              API can also be useful for consumers to customize what they want
-              included or excluded. </li>
-            <li>Hosting a database, web page, or SPARQL endpoint that contains
-              discoverable metadata [[VOCAB-DCAT]] describing the container and
-              data URLs associated with the container.</li>
+            <li>Preprocessing a copy of the data into a compressed archive format
+              and making the data accessible from one URI. This is
+              particularly useful for handling data that changes infrequently.</li>
+            <li>Hosting an API that includes the ability to
+              retrieve a bulk download in addition to dynamic queries. This
+              approach is useful for capturing a complete snapshot of dynamic data.</li>
+            <li>For very large datasets, bulk file transfers can be enabled via means other than http, such as <a href="http://www.slac.stanford.edu/~abh/bbcp/">bbcp</a> or <a href="http://toolkit.globus.org/toolkit/docs/latest-stable/gridftp/">GridFTP</a>.</li>
           </ul>
           <aside class="example">
-            <p>to be done </p>
+            <p>The MyCity transit agency may have a large dataset with arrival times for the various transit modes that was collected over the entire year of 2015. The data might be stored as a CSV file for each month. Suppose the agency wants to make that data available as a bulk download containing all the CSV files, for a hackathon. Since all the arrival data for all the transit services would be a lot of data, and they want to provide all the months together as one dataset, they might offer it as a single-file, compressed archive (tarred and gzipped).</p>
           </aside>
         </section>
         <section class="test">
           <p class="subhead">How to Test</p>
-          <p>Humans can retrieve copies of preprocessed bulk data through
-            existing tools such as a browser. Clients can test bulk access
-            through an API or queries to web resources with discoverable
-            metadata about the bulk data. </p>
+          <p>Humans can retrieve complete copies of preprocessed bulk data through
+            existing tools such as a browser via a single request. </p>
         </section>
         <section class="ucr">
           <p class="subhead">Evidence</p>
@@ -2970,87 +3050,53 @@ A usual resident was generally defined as someone who spent most of their time a
         </section>
       </div>
       <!-- end of BP Bulk Access -->
-      <!-- begin of Web Standards for APIs -->
+
+      <!-- begin of BP Subsetting-->
       <div class="practice">
-        <p><span id="APIHttpVerbs" class="practicelab">Use Web Standards as the foundation of your API</span></p>
-        <p class="practicedesc">When designing APIs, it is recommended to use an architectural style that is founded on the technologies of the Web itself. Web standards such as URIs, HTTP verbs, HTTP response codes, MIME types, typed HTTP Links, and content negotiation can all help solve difficult problems and enable you to build a flexible and useful data service. </p>
+        <p><span id="BulkAccess" class="practicelab">Provide Subsets for Large Datasets</span></p>
+        <p class="practicedesc">If your dataset is large, enable users and applications to readily work with useful subsets of your data.</p>
         <section class="axioms">
           <p class="subhead">Why</p>
-          <p>APIs that are built on Web standards leverage the strengths of the Web. For example, using HTTP verbs as methods and URIs that map directly to individual resources helps to avoid tight coupling between requests and responses, making for an API that is easy to maintain and can readily be understood and used by many developers. The statelessness of the Web can be a strength in enabling quick scaling, and using hypermedia enables rich interactions with your API. </p>
+          <p>Large datasets can be difficult to move from place to place. It can also be inconvenient for users to store or parse a large dataset. Users should not have to download a complete dataset if they only need a subset of it. Moreover, web applications that tap into large datasets will perform better if their developers can take advantage of “lazy loading”, working with smaller pieces of a whole and pulling in new pieces only as needed. The ability to work with subsets of the data also enables offline processing to work more efficiently. Real-time applications benefit in particular, as they can update more quickly.</p>
         </section>
         <section class="outcome">
           <p class="subhead">Intended Outcome</p>
-          <ul>
-            <li>Developers who have some experience with APIs based on Web standards, such as REST, will have an initial understanding of how to use your API because it uses a standardized interface. Your API will also be easier to maintain. </li>
-          </ul>
+          <p> Both human users and applications should be able to access subsets of a dataset, rather than the entire thing, as needed. Subsetting approaches should aim for a high ratio of needed data to unneeded data for the largest number of users. Static datasets that users in the domain would consider to be large should be downloadable in smaller pieces. APIs should make slices or filtered subsets of the data available, the granularity depending on the needs of the domain and the demands of performance in a web application.</p>
         </section>
         <section class="how">
           <p class="subhead">Possible Approaches to Implementation</p>
-          <p>REST (REpresentational State Transfer) is an architectural style that, when used in a web API, takes advantage of the architecture of the Web itself. A full discussion of how to build a RESTful API is beyond the scope of this document, but there are many resources and a strong community that can help in getting started. There are also many RESTful development frameworks available. If you are already using a Web development framework that supports building REST APIs, consider using that. If not, consider an API-only framework that uses REST.</p>
-          <p>Another aspect of implementation to consider is making a hypermedia API, one that responds with links rather than data alone. Links are what make the Web a web, and data APIs can be more useful and usable by including links in their responses. The links can offer additional resources, documentation, and navigation. Even for an API that does not meet all the constraints of REST, returning links in responses can make for a service that is rich and self-documenting. </p>
-          <aside class="example">An example response for information about a certain bus route from a hypermedia API might look like the following:
-            <pre>
-{
-  "code": "200",
-  "text": "OK",
-  "data": {
-    "update_time": "2013-01-01T03:00:02Z",
-    "route_id": "52",
-    "route_name" "Lexington South"
-    "route_description": "Lexington corridor south of Market",
-    "route_type": "3",
-  },
-  "links": [
-    {
-      "href": "https://api.transit.mycity.org/v2/routes/52",
-      "rel": "self",
-      "type": "application/json",
-      "method": "GET"
-    },
-    {
-      "href": "https://api.transit.mycity.org/v2/routes",
-      "rel": "collection",
-      "type": "application/json",
-      "method": "GET"
-    }
-    {
-      "href": "https://api.transit.mycity.org//v2/schedules/52",
-      "rel": "described-by",
-      "type": "application/json",
-      "method": "GET"
-    },
-    {
-      "href": "https://api.transit.mycity.org//v2/maps/52",
-      "rel": "described-by",
-      "type": "application/json",
-      "method": "GET"
-    }
-  ]
-}
-            </pre>
+          <p>Consider the expected use cases for your dataset and determine what types of subsets are likely to be most useful. An API is usually the most flexible approach to serving subets of data, as it allows customization of what data is transferred, making the available subsets much more likely to provide the needed data--and little unneeded data--for any given situation. The granularity should be suitable for web application access speeds. (An API call that  returns within one second enables an application to deliver interactivity that feels natural. Data that takes more than ten seconds to deliver will likely cause users to suspect failure.)</p>
+          <aside class="example">
+            <p>The MyCity transit API offers information about individual buses, bus stops, and time points. It can accept a query for all the timepoints for a single stop on a single bus route, or it can accept one for all the buses along one route at one time point, or it can accept one for all the time points for a single bus on a single route. These small slices through the data enable web applications to update data quickly and deliver it to riders on demand, interactively. </p>
           </aside>
+          <p>Another way to subset a dataset is to simply split it into smaller units and make those units individually available for download or viewing.</p>
+          <aside class="example">
+            <p>The MyCity transit agency has a set of nicely formatted single-route schedules available in PDF format. Users can select the route they plan to ride from a menu and view or download the schedule for that route alone.</p>
+          </aside>
+            <p>It can also be helpful to mark up a dataset so that individual sections through the data (or even smaller pieces, if expected use cases warrant it) can be processed separately. One way to do that is by indicating “slices” with the <a href="https://www.w3.org/TR/vocab-data-cube/#cubes-slices">RDF Data Cube Vocabulary</a>.</p>
         </section>
         <section class="test">
           <p class="subhead">How to Test</p>
-          <p>Check that the service avoids using http as a tunnel for calls to custom methods, and check that URIs do not contain method names.</p>
+          <p>Check that the full content of the dataset can be recovered by retrieval of multiple subsets.</p>
         </section>
         <section class="ucr">
           <p class="subhead">Evidence</p>
-          <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-APIDocumented">R-APIDocumented</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-UniqueIdentifier">R-UniqueIdentifier</a></p>
+          <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-Citable">R-Citable</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-GranularityLevels">R-GranularityLevels</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-UniqueIdentifier">R-UniqueIdentifier</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-AccessRealTime">R-AccessRealTime</a></p>
         </section>
-         <section class="benefits">
+        <section class="benefits">
           <p class="subhead">Benefits</p>
           <ul class="benefitsList">
-            <li>Reuse</li><li>Linkability</li><li>Interoperability</li>
+            <li>Reuse</li><li>Linkability</li> 
             <!--              <li>Comprehension</li>
-                                         <li>Trust</li>-->
-            <li>Discoverability</li> <li>Access</li>
-            <li>Processability</li>
+                           <li>Discoverability</li>              <li>Trust</li>-->
+            <li>Access</li>
+            <!--              <li>Interoperability</li> -->
+              <li>Processability</li>
           </ul>
         </section>
-       <div class="note">This BP will be complemented.</div>
       </div>
-      <!-- end of Web Standards for APIs -->
+      <!-- end of BP Subsetting -->
+
       <!-- begin of BP Content Negotiation -->
       <div class="practice">
         <p><span id="Conneg" class="practicelab">Serving data and resources with
@@ -3083,12 +3129,12 @@ A usual resident was generally defined as someone who spent most of their time a
             by the URI or by the Content-type of the HTTP Request.</p>
           <aside class="example">
             <p>
-              Different representations of the Bus Timetable dataset can be served according to the specified content type of the HTTP Request: <br>
+              Different representations of the bus stops dataset can be served according to the specified content type of the HTTP Request: <br>
 
-              Using <code>cURL</code> to get the content of <code>http://example.org/bus_timetables_mycity</code> represented in CSV and in JSON-LD format.
+              Using <code>cURL</code> to get the content of <code>http://example.org/bus-stops</code> represented in CSV and in JSON-LD format.
 
-              <pre class="highlight">curl -H "Accept: text/csv" http://example.org/bus_timetables_mycity</pre>
-              <pre class="highlight">curl -H "Accept: application/ld+json" http://example.org/bus_timetables_mycity</pre>
+              <pre class="highlight">curl -H "Accept: text/csv" http://example.org/bus-stops</pre>
+              <pre class="highlight">curl -H "Accept: application/ld+json" http://example.org/bus-stops</pre>
 
             </p>
           </aside>
@@ -3248,93 +3294,228 @@ A usual resident was generally defined as someone who spent most of their time a
         </section>
       </div>
       <!-- end of BP Access Up to date -->
-      <div class="issue">
-        <p> To debate if the goal should be to adhere to a published schedule
-          for updates. <a href="http://www.w3.org/2013/dwbp/track/issues/195">Issue-195</a></p>
-      </div>
-      <!-- begin of Document API code BP -->
-      <div class="practice">
-        <p><span id="documentYourAPI" class="practicelab">Provide complete documentation for your API</span></p>
-        <p class="practicedesc">Provide complete information on the web about your API. Be sure to update documentation as you add features or make changes.</p>
-        <section class="axioms">
-          <p class="subhead">Why</p>
-          <!-- <p>The primary consumers of an API are developers. In order to develop against your API, a developer will need to understand how to use it.</p> -->
-          <p>Developers are the primary consumers of an API. In order to develop against it, they will need to understand how to use it. Providing comprehensive documentation in one place allows developers to code efficiently. Highlighting changes enables your users to take advantage of new features and adapt their code if needed. </p>
-        </section>
-        <section class="outcome">
-          <p class="subhead">Intended Outcome</p>
-          <!-- <p>Developers will be able to code efficiently against your API, and they will make best use of the features you have provided.Your documentation should explain the architecture chosen for the API and show how to invoke each API call and what will be returned from each call.</p> -->
-          <p>The whole set of information related to the API&mdash;how to use it, notices of recent changes, contact information, and so on&mdash;should be easily browsable on the Web.</p>
-          <p>Developers should be able to obtain detailed information about each call to the API, including the parameters it takes and what it is expected to return.</p>
-          <p>The API should be self-documenting as well, so that calls return helpful information about errors and usage.</p>
-          <p>Recent changes to the API itself should be readily discoverable by users.</p>
-          <p>API users should be able to contact the maintainers with questions, suggestions, or bug reports.</p>
-        </section>
-        <section class="how">
-          <p class="subhead">Possible Approach to Implementation</p>
-          <p>A typical API reference provides a comprehensive list of the calls the API can handle, describing the purpose of each one, detailing the parameters it allows and what it returns, and giving one or more examples of its use. One nice trend in API documentation is to provide a form in which developers can enter specific calls for testing, to see what the API returns for their use case. There are now tools available for quickly creating this type of documentation, such as <a href="http://swagger.io/">Swagger</a>, <a href="https://www.mashery.com/api/io-docs">io-docs</a>, <a href="https://openapis.org/">OpenApis</a>, and others.</p>
-          <aside class="example"><p>Swagger offers an example reference for a <a href="http://petstore.swagger.io/#/">pet store API</a>.</p></aside>
-        </section>
-        <section class="test">
-          <p class="subhead">How to Test</p>
-          <p>Check that every call enabled by your API is described in your documentation. Make sure you provide details of what parameters are required or optional and what each call returns. The quality of documentation is also related to usage and feedback from developers. Try to get constant feedback from your users about the documentation.</p>
-        </section>
-        <section class="ucr">
-          <p class="subhead">Evidence</p>
-          <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-APIDocumented">R-APIDocumented</a></p>
-        </section>
+      <section id="dataAccessAPIs">
+        <h4>Data Access APIs</h4>
+        <p> In the following, we present best practices related with the creation of APIs to provide data access.</p>
+         <!-- begin of Use an API -->
+        <div class="practice">
+          <p><span id="useanAPI" class="practicelab">Make Data Available through an API</span></p>
+          <p class="practicedesc">Offer an API to serve data if you have the resources to do so.</p>
+          <!-- <p class="practicedesc">When there are resources available, you <em class="rfc2119">should</em> offer an API</p> -->
+          <section class="axioms">
+            <p class="subhead">Why</p>
+            <p>An API offers the greatest flexibility and processability for consumers of your data. It can enable real-time data usage, filtering on request, and the ability to work with the data at an atomic level. If your dataset is large, frequently updated, or highly complex, an API is likely to be the best option for publishing your data.</p>
+          </section>
+          <section class="outcome">
+            <p class="subhead">Intended Outcome</p>
+            <p>Developers will have programmatic access to the data for use in their own applications. Data can be updated without requiring effort on the part of consumers.</p>
+          </section>
+          <section class="how">
+            <p class="subhead">Possible Approach to Implementation</p>
+            <p>Creating an API is a little more involved than posting data for download. It requires some understanding of how to build a Web application. One need not necessarily build from scratch, however. If you use a data management platform, such as CKAN, you may be able to enable an existing API. Many Web development frameworks include support for APIs, and there are also frameworks written specifically for building custom APIs.</p>
+            <aside class="example"><p> Rails, Django, and Express are some example Web development frameworks that offer support for building APIs. Examples of API frameworks include Swagger, Apigility, Restify, and Restlet.</p></aside>
+          </section>
+          <section class="test">
+            <p class="subhead">How to Test</p>
+            <p>It should be possible for Web applications to obtain specific data by querying a programmatic interface. Use a test client to simulate calls and responses, making sure that the performance is acceptable.</p>
+          </section>
+          <section class="ucr">
+            <p class="subhead">Evidence</p>
+            <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-AccessRealTime">R-AccessRealTime</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-AccessUpToDate">R-AccessUpToDate</a></p>
+          </section>
           <section class="benefits">
             <p class="subhead">Benefits</p>
             <ul class="benefitsList">
-              <li>Reuse</li>
-              <li>Trust</li>
+              <li>Reuse</li>  <li>Processability</li><li>Interoperability</li> <li>Access</li>
+
               <!--              <li>Comprehension</li>
-              <li>Linkability</li>              <li>Discoverability</li> -->
-              <!--              <li>Access</li>
-              <li>Interoperability</li>              <li>Processability</li> -->
+                <li>Linkability</li>              <li>Discoverability</li>              <li>Trust</li>-->
             </ul>
           </section>
-       <div class="note">This BP will be complemented.</div>
-      </div>
-      <!-- end of Document API code BP -->
-      <!-- begin of Use an API -->
-      <div class="practice">
-        <p><span id="useanAPI" class="practicelab">Make Data Available through an API</span></p>
-        <p class="practicedesc">Offer an API to serve data if you have the resources to do so.</p>
-        <!-- <p class="practicedesc">When there are resources available, you <em class="rfc2119">should</em> offer an API</p> -->
-        <section class="axioms">
-          <p class="subhead">Why</p>
-          <p>An API offers the greatest flexibility and processability for consumers of your data. It can enable real-time data usage, filtering on request, and the ability to work with the data at an atomic level. If your dataset is large, frequently updated, or highly complex, an API is likely to be the best option for publishing your data.</p>
-        </section>
-        <section class="outcome">
-          <p class="subhead">Intended Outcome</p>
-          <p>Developers will have programmatic access to the data for use in their own applications. Data can be updated without requiring effort on the part of consumers.</p>
-        </section>
-        <section class="how">
-          <p class="subhead">Possible Approach to Implementation</p>
-          <p>Creating an API is a little more involved than posting data for download. It requires some understanding of how to build a Web application. One need not necessarily build from scratch, however. If you use a data management platform, such as CKAN, you may be able to enable an existing API. Many Web development frameworks include support for APIs, and there are also frameworks written specifically for building custom APIs.</p>
-          <aside class="example"><p> Rails, Django, and Express are some example Web development frameworks that offer support for building APIs. Examples of API frameworks include Swagger, Apigility, Restify, and Restlet.</p></aside>
-        </section>
-        <section class="test">
-          <p class="subhead">How to Test</p>
-          <p>It should be possible for Web applications to obtain specific data by querying a programmatic interface. Use a test client to simulate calls and responses, making sure that the performance is acceptable.</p>
-        </section>
-        <section class="ucr">
-          <p class="subhead">Evidence</p>
-          <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-AccessRealTime">R-AccessRealTime</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-AccessUpToDate">R-AccessUpToDate</a></p>
-        </section>
-        <section class="benefits">
+          <div class="issue">To review the BP "Use an API" and possibly rewrite <em>Possible Approach to Impelmentation</em> section.</div>
+        </div>
+        <!-- end of Use an API -->
+        <!-- begin of Web Standards for APIs -->
+        <div class="practice">
+          <p><span id="APIHttpVerbs" class="practicelab">Use Web Standards as the foundation of your API</span></p>
+          <p class="practicedesc">When designing APIs, it is recommended to use an architectural style that is founded on the technologies of the Web itself. Web standards such as URIs, HTTP verbs, HTTP response codes, MIME types, typed HTTP Links, and content negotiation can all help solve difficult problems and enable you to build a flexible and useful data service. </p>
+          <section class="axioms">
+            <p class="subhead">Why</p>
+            <p>APIs that are built on Web standards leverage the strengths of the Web. For example, using HTTP verbs as methods and URIs that map directly to individual resources helps to avoid tight coupling between requests and responses, making for an API that is easy to maintain and can readily be understood and used by many developers. The statelessness of the Web can be a strength in enabling quick scaling, and using hypermedia enables rich interactions with your API. </p>
+          </section>
+          <section class="outcome">
+            <p class="subhead">Intended Outcome</p>
+            <ul>
+              <li>Developers who have some experience with APIs based on Web standards, such as REST, will have an initial understanding of how to use your API because it uses a standardized interface. Your API will also be easier to maintain. </li>
+            </ul>
+          </section>
+          <section class="how">
+            <p class="subhead">Possible Approaches to Implementation</p>
+            <p>REST (REpresentational State Transfer) is an architectural style that, when used in a web API, takes advantage of the architecture of the Web itself. A full discussion of how to build a RESTful API is beyond the scope of this document, but there are many resources and a strong community that can help in getting started. There are also many RESTful development frameworks available. If you are already using a Web development framework that supports building REST APIs, consider using that. If not, consider an API-only framework that uses REST.</p>
+            <p>Another aspect of implementation to consider is making a hypermedia API, one that responds with links rather than data alone. Links are what make the Web a web, and data APIs can be more useful and usable by including links in their responses. The links can offer additional resources, documentation, and navigation. Even for an API that does not meet all the constraints of REST, returning links in responses can make for a service that is rich and self-documenting. </p>
+            <aside class="example">An example response for information about a certain bus route from a hypermedia API might look like the following:
+              <pre>
+  {
+    "code": "200",
+    "text": "OK",
+    "data": {
+      "update_time": "2013-01-01T03:00:02Z",
+      "route_id": "52",
+      "route_name" "Lexington South"
+      "route_description": "Lexington corridor south of Market",
+      "route_type": "3",
+    },
+    "links": [
+      {
+        "href": "https://api.transit.mycity.org/v2/routes/52",
+        "rel": "self",
+        "type": "application/json",
+        "method": "GET"
+      },
+      {
+        "href": "https://api.transit.mycity.org/v2/routes",
+        "rel": "collection",
+        "type": "application/json",
+        "method": "GET"
+      }
+      {
+        "href": "https://api.transit.mycity.org//v2/schedules/52",
+        "rel": "described-by",
+        "type": "application/json",
+        "method": "GET"
+      },
+      {
+        "href": "https://api.transit.mycity.org//v2/maps/52",
+        "rel": "described-by",
+        "type": "application/json",
+        "method": "GET"
+      }
+    ]
+  }
+              </pre>
+            </aside>
+          </section>
+          <section class="test">
+            <p class="subhead">How to Test</p>
+            <p>Check that the service avoids using http as a tunnel for calls to custom methods, and check that URIs do not contain method names.</p>
+          </section>
+          <section class="ucr">
+            <p class="subhead">Evidence</p>
+            <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-APIDocumented">R-APIDocumented</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-UniqueIdentifier">R-UniqueIdentifier</a></p>
+          </section>
+           <section class="benefits">
+            <p class="subhead">Benefits</p>
+            <ul class="benefitsList">
+              <li>Reuse</li><li>Linkability</li><li>Interoperability</li>
+              <!--              <li>Comprehension</li>
+                                           <li>Trust</li>-->
+              <li>Discoverability</li> <li>Access</li>
+              <li>Processability</li>
+            </ul>
+          </section>
+         <div class="note">This BP will be complemented.</div>
+        </div>
+        <!-- end of Web Standards for APIs -->
+        <!-- begin of Document API code BP -->
+        <div class="practice">
+          <p><span id="documentYourAPI" class="practicelab">Provide complete documentation for your API</span></p>
+          <p class="practicedesc">Provide complete information on the web about your API. Be sure to update documentation as you add features or make changes.</p>
+          <section class="axioms">
+            <p class="subhead">Why</p>
+            <!-- <p>The primary consumers of an API are developers. In order to develop against your API, a developer will need to understand how to use it.</p> -->
+            <p>Developers are the primary consumers of an API. In order to develop against it, they will need to understand how to use it. Providing comprehensive documentation in one place allows developers to code efficiently. Highlighting changes enables your users to take advantage of new features and adapt their code if needed. </p>
+          </section>
+          <section class="outcome">
+            <p class="subhead">Intended Outcome</p>
+            <!-- <p>Developers will be able to code efficiently against your API, and they will make best use of the features you have provided.Your documentation should explain the architecture chosen for the API and show how to invoke each API call and what will be returned from each call.</p> -->
+            <p>The whole set of information related to the API&mdash;how to use it, notices of recent changes, contact information, and so on&mdash;should be easily browsable on the Web.</p>
+            <p>Developers should be able to obtain detailed information about each call to the API, including the parameters it takes and what it is expected to return.</p>
+            <p>The API should be self-documenting as well, so that calls return helpful information about errors and usage.</p>
+            <p>Recent changes to the API itself should be readily discoverable by users.</p>
+            <p>API users should be able to contact the maintainers with questions, suggestions, or bug reports.</p>
+          </section>
+          <section class="how">
+            <p class="subhead">Possible Approach to Implementation</p>
+            <p>A typical API reference provides a comprehensive list of the calls the API can handle, describing the purpose of each one, detailing the parameters it allows and what it returns, and giving one or more examples of its use. One nice trend in API documentation is to provide a form in which developers can enter specific calls for testing, to see what the API returns for their use case. There are now tools available for quickly creating this type of documentation, such as <a href="http://swagger.io/">Swagger</a>, <a href="https://www.mashery.com/api/io-docs">io-docs</a>, <a href="https://openapis.org/">OpenApis</a>, and others.</p>
+            <aside class="example"><p>Swagger offers an example reference for a <a href="http://petstore.swagger.io/#/">pet store API</a>.</p></aside>
+          </section>
+          <section class="test">
+            <p class="subhead">How to Test</p>
+            <p>Check that every call enabled by your API is described in your documentation. Make sure you provide details of what parameters are required or optional and what each call returns. The quality of documentation is also related to usage and feedback from developers. Try to get constant feedback from your users about the documentation.</p>
+          </section>
+          <section class="ucr">
+            <p class="subhead">Evidence</p>
+            <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-APIDocumented">R-APIDocumented</a></p>
+          </section>
+            <section class="benefits">
+              <p class="subhead">Benefits</p>
+              <ul class="benefitsList">
+                <li>Reuse</li>
+                <li>Trust</li>
+                <!--              <li>Comprehension</li>
+                <li>Linkability</li>              <li>Discoverability</li> -->
+                <!--              <li>Access</li>
+                <li>Interoperability</li>              <li>Processability</li> -->
+              </ul>
+            </section>
+         <div class="note">This BP will be complemented.</div>
+        </div>
+        <!-- end of Document API code BP -->
+        <!-- begin of avoid breaking changes at APIs -->
+        <div class="practice">
+          <p><span id="provideVersioningInfo" class="practicelab">Avoid Breaking Changes to Your API</span></p>
+          <p class="practicedesc">Avoid changes to your API that break client code, and communicate any changes in your API to your developers when evolution happens. </p>
+          <section class="axioms">
+            <p class="subhead">Why</p>
+            <p>When developers implement a client for your API, they may rely on specific characteristics that you have built into it, such as the schema or the format of a response. Avoiding breaking changes in your API minimizes breakage to client code. Communicating changes when they do occur enables developers to take advantage of new features and, in the rare case of a breaking change, take action. </p>
+          </section>
+          <section class="outcome">
+            <p class="subhead">Intended Outcome</p>
+            <p>Developer code will continue to work. Developers will know of improvements you make and be able to make use of them. Breaking changes to your API will be rare, and if they occur, developers will have sufficient time and information to adapt their code. That will enable them to avoid breakage, enhancing trust.</p>
+          </section>
+          <section class="how">
+            <p class="subhead">Possible Approach to Implementation</p>
+          <p>When improving your API, focus on adding new calls or new, unrequired options rather than changing how existing calls work. Existing clients can ignore such changes and will continue functioning.</p>
+            <p>If using a fully RESTful style, you should be able to avoid changes that affect developers by keeping home resource URIs constant and changing only elements that your users do not code to directly. If you need to change your data in ways that are not compatible with the extension points that you initially designed, then a completely new design is called for, and that means changes that break client code. In that case, it’s best to implement the changes as a new REST API, with a different home resource URI. </p>
+          <p>If using an architectural style that does not allow you to make moderately significant changes without breaking client code, use versioning. Indicate the version in the response header. Version numbers should be reflected in your URIs or in request "accept" headers (using content negotiation). When versioning in URIs, include the version number as far to the left as possible. Keep the previous version available for developers whose code has not yet been adapted to the new version.</p>
+          <aside class="example">Some examples of breaking changes to an API include
+            <ul>
+              <li>Removing a call;</li>
+              <li>Changing the method used to make a call;</li>
+              <li>Changing the URI of a resource used in a call;</li>
+              <li>Adding a required parameter for a call;</li>
+              <li>Changing the data type of a parameter;</li>
+              <li>Changing the name of a key in a key-value response;</li>
+              <li>Changing the structure of an XML response</li>
+              <li>Changing the data type of a value in a response, such as changing a string to an array;</li>
+            </ul>
+          </aside>
+          <p>Changes to the API should be announced on your API documentation site. To notify users directly of changes, it's a good idea to create a mailing list and encourage developers to join. You can then announce changes there, and this provides a nice mechanism for feedback as well. It also allows your users to help each other.</p>
+          </section>
+          <section class="test">
+            <p class="subhead">How to Test</p>
+            <p>Release changes initially to a test version of your API before applying them to the production version. Invite developers to test their applications on the test version and provide feedback.</p>
+          </section>
+          <section class="ucr">
+            <p class="subhead">Evidence</p>
+            <p><span>Relevant requirements</span>: <a href="http://www.w3.org/TR/dwbp-ucr/#R-PersistentIdentification">R-PersistentIdentification</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-APIDocumented">R-APIDocumented</a></p>
+          </section>
+         <section class="benefits">
           <p class="subhead">Benefits</p>
           <ul class="benefitsList">
-            <li>Reuse</li>  <li>Processability</li><li>Interoperability</li> <li>Access</li>
-
+             <li>Trust</li><li>Interoperability</li>
             <!--              <li>Comprehension</li>
-              <li>Linkability</li>              <li>Discoverability</li>              <li>Trust</li>-->
+            <li>Reuse</li>
+           <li>Linkability</li>              <li>Discoverability</li> -->
+            <!--              <li>Access</li>
+                         <li>Processability</li> -->
           </ul>
         </section>
-        <div class="issue">To review the BP "Use an API" and possibly rewrite <em>Possible Approach to Impelmentation</em> section.</div>
-      </div>
-      <!-- end of Use an API -->
+        </div>
+        <!-- end of avoid breaking changes to APIs -->
+
+      </section>
+      <!-- end of Data Access APIs -->
     </section>
     <!-- end of Data Access -->
     <!-- begin of Data Preservation -->
@@ -3590,28 +3771,28 @@ A usual resident was generally defined as someone who spent most of their time a
             <p>One approach with a link header is to use the Memento protocol to
               give a link to a timegate providing access to the preserved
               descriptions of the resource:</p>
-            <pre class="highlight">curl -I http://example.org/timetable-001
+            <pre class="highlight">curl -I http://example.org/bus-stops-001
 
 HTTP/1.1 200 OK
 Memento-Datetime: Sun, 05 April 2015 00:00:00 GMT
-Link: http://example.org/timetable; rel=“original”, http://example.org/timegate/dataset; rel=“timegate”
+Link: http://example.org/bus-stops; rel=“original”, http://example.org/timegate/dataset; rel=“timegate”
             </pre>
             <p>Using HTTP status code the data consumer can be redirected to the
               most recent description of the entity. In the following example a
-              request for the resource "http://example.org/timetable-001" is
+              request for the resource "http://example.org/bus-stops-001" is
               first redirected to the description
-              "http://example.org/data/timetable-001" which, as it has been
+              "http://example.org/data/bus-stops-001" which, as it has been
               preserved and flagged as invalid, redirects the client to the
-              newer description "http://example.org/newdata/timetable-001"</p>
-            <pre class="highlight">curl -L -I http://example.org/timetable-001
+              newer description "http://example.org/newdata/bus-stops-001"</p>
+            <pre class="highlight">curl -L -I http://example.org/bus-stops-001
 
 HTTP/1.1 303 See Other
-Location: http://example.org/data/timetable-001
-Link: http://example.org/newdata/timetable-001, rel="new"
+Location: http://example.org/data/bus-stops-001
+Link: http://example.org/newdata/bus-stops-001, rel="new"
 
 HTTP/1.1 303 See Other
-Location: http://example.org/newdata/timetable-001
-Link: http://example.org/data/timetable-001, rel="previous"
+Location: http://example.org/newdata/bus-stops-001
+Link: http://example.org/data/bus-stops-001, rel="previous"
 
 HTTP/1.1 200 Ok
            </pre>
@@ -3765,43 +3946,42 @@ HTTP/1.1 200 Ok
             DWBP working group , i.e., the Dataset Usage Vocabulary [[DUV]].</p>
           <aside class="example">
             <pre class="highlight">
-    :timetable-001
+    :bus-stops-001
       a dcat:Dataset;
-      dct:title "Bus timetable of MyCity";
+      dct:title "Bus stops of MyCity";
       dcat:keyword "transport","mobility" ,"bus";
       dct:issued "2015-05-05"^^xsd:date';
-      dct:modified "2015-05-05"^^xsd:date';
       dcat:contactPoint <http://example.org/transport-agency/contact>;
       dct:temporal <http://reference.data.gov.uk/id/year/2014>;
       dct:spatial <http://www.geonames.org/3399415>;
       dct:publisher:transport-agency-mycity ;
       dct:accrualPeriodicity <http://purl.org/linked-data/sdmx/2009/code#freq-A> ;
       dcat:theme :mobility;
-      dcat:distribution :timetable-001-csv;
+      dcat:distribution :bus-stops-001-csv;
       .
 
-    :timetable-001-csv
+    :bus-stops-001-csv
       a dcat:Distribution;
-      dct:title "CSV distribution MyCity_busTimetable dataset."
-      dct:description "CSV distribution of the bus timetable dataset of MyCity."
+      dct:title "CSV distribution MyCity bus stops dataset."
+      dct:description "CSV distribution of the bus bus stops dataset of MyCity."
       dcat:mediaType "text/csv";
       .
 
-    :comment1Content a cnt:ContentAsText ;
-      cnt:chars "This timetable is missing route 3" .
+    :comment1Content a cnt:ContentAsText;
+      cnt:chars "This bus stop is missing stop 3".
 
     :comment1
-       a duv:UserFeedback ;
-       oa:hasBody comment1Content ;
-       oa:hasTarget :timetable-001 ;
-       dct:creator :localresident .
+       a duv:UserFeedback;
+       oa:hasBody comment1Content;
+       oa:hasTarget :bus-stops-001;
+       dct:creator :localresident.
 
-    :comment2Content a cnt:ContentAsText ;
-      cnt:chars "Are tab delimited formats also available?" .
+    :comment2Content a cnt:ContentAsText;
+      cnt:chars "Are tab delimited formats also available?".
 
     :comment2
        a duv:UserFeedback ;
-       oa:hasTarget :timetable-001-csv;
+       oa:hasTarget :bus-stops-001-csv;
        oa:hasBody comment1Content ;
        dct:creator :localresident ;
     .
@@ -3844,61 +4024,81 @@ HTTP/1.1 200 Ok
     <!-- begin enrichment -->
     <section id="enrichment">
       <h3>Data Enrichment</h3>
-      <div class="note">
-        <p> To discuss about enrichment yields derived data, not just metadata.
-          For example, you could take a dataset of scheduled and real bus
-          arrival times and enrich it by adding on-time arrival percentages. The
-          percentages are data, not metadata. </p>
-      </div>
-      <div class="note">
-        <p> To discuss about the meaning of the word “topification”. </p>
-      </div>
       <p>Data enrichment refers to a set of processes that can be used to
         enhance, refine or otherwise improve raw or previously processed data.
         This idea and other similar concepts contribute to making data a
-        valuable asset for almost any modern business or enterprise. It also
-        shows the common imperative of proactively using this data in various
-        ways.</p>
+        valuable asset for almost any modern business or enterprise.</p>
       <p>This section provides some advice to be followed by data publishers in
-        order to enable data consumers to enrich data.</p>
-      <!-- begin of BP Data Enrichment -->
+        order to enrich data.</p>
+      <!-- begin of BP Enrich data -->
       <div class="practice">
         <p><span id="EnrichData" class="practicelab">Enrich data by generating
-            new metadata.</span></p>
-        <p class="practicedesc">Data should be enriched whenever possible,
-          generating richer metadata to represent and describe it.</p>
+            new data.</span></p>
+        <p class="practicedesc">Enrich your data by generating new data from the raw data when doing so will enhance its value.</p>
         <section class="axioms">
           <p class="subhead">Why</p>
-          <p>There is a large number of intelligent techniques that can be used
-            to enrich raw or previously treated data and to extract new metadata
-            from it, making data an even more valuable asset. These methods
-            include those focused on data categorization, entity recognition,
-            sentiment analysis, topification, among others. Providing new and
-            richer metadata may help data consumers to better understand the
-            data they are dealing with.</p>
+          <p>Enrichment can greatly enhance processability, particularly for unstructured data. Missing values can be filled in, and new attributes and measures can be added. Publishing more complete datasets enhances trust. Deriving additional values that are of general utility saves users time and encourages more kinds of reuse. There are many intelligent techniques that can be used to enrich data, making the dataset an even more valuable asset.</p>
         </section>
         <section class="outcome">
           <p class="subhead">Intended Outcome</p>
-          <p>Describe a dataset using richer sets of metadata, which can be
-            readable by humans.</p>
+          <p>A dataset that has missing values should be enhanced if possible to fill in those values. Additional relevant measures or attributes should be added if they enhance utility. Unstructured data can be given structure in this way as well.</p>
+          <p>Because inference-based enrichment may introduce errors into the data, values generated by such techniques should be labeled as such, and it should be possible to retrieve any original values replaced by enrichment.</p>
+          <p>Whenever licensing permits, the code used to enrich the data should be made available along with the dataset. Sharing such code is particularly important for scientific data. </p>
         </section>
         <section class="how">
-          <p class="subhead"> Possible Approach to Implementation</p>
-          <p> The implementation depends on what types of metadata should be
-            produced. They require the implementation of methods for data
-            categorization, disambiguation, sentiment analysis, among others.<!-- ,
-            according to the suggestions described in <a href="enrichment.html">Data
-              Enrichment Technical Note</a>. -->
-             After new metadata is extracted, it
-            can be provided as part of an HTML Web page or any open data format.</p>
+          <p class="subhead"> Possible Approaches to Implementation</p>
+          <p> Machine learning can be readily applied to the enrichment of data. Methods include those focused on data categorization, disambiguation, entity recognition, sentiment analysis, and topification, among others. After new data is extracted, it can be provided as part of any open data format.</p>
+          <p>New data values may be derivable as simply as performing a mathematical calculation across existing columns. Other examples include visual inspection to identify features in spatial data and cross-reference to external databases for demographic information. </p>
           <aside class="example">
-            <pre>to be done</pre>
+            <p>The MyCity transport agency has street addresses for each of its transit stops. It wants to make it easier for consumers of its data to combine the data with maps, so it adds latitude and longitude information for each stop by utilizing a geographic database.</p>
+          </aside>
+          <aside class="example">
+            <p>The transit agency has a large collection of email correspondence from transit riders. Some of the correspondence is complementary, some is complaints, and some is requesting information. The agency conducts a combination of sentiment analysis and categorization to extract metadata for each of the messages, such as transit mode, route number, and rider positivity, to create a semistructured dataset.</p>
           </aside>
         </section>
         <section class="test">
           <p class="subhead">How to test</p>
-          <p>Check whether the metadata being extracted by the techniques are in
-            accordance with human-knowledge and can be readable by humans.</p>
+          <p>Look for missing values in the dataset or additional fields likely to be needed by others. Check that any data added by inferential enrichment techniques is identified as such and that any replaced data is still available. Check that code used to enrich the data is available. Check whether the metadata being extracted is in accordance with human knowledge and readable by humans.</p>
+        </section>
+        <section class="ucr">
+          <p class="subhead">Evidence</p>
+          <p><span>Relevant requirements:</span> <a href="http://www.w3.org/TR/dwbp-ucr/#R-DataEnrichment">R-DataEnrichment</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-FormatMachineRead">R-FormatMachineRead</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-ProvAvailable">R-ProvAvailable</a></p>
+        </section>
+        <section class="benefits">
+          <p class="subhead">Benefits</p>
+          <ul class="benefitsList">
+            <li>Reuse</li>
+            <li>Comprehension</li>
+            <!--              <li>Linkability</li>
+              <li>Discoverability</li>                           <li>Access</li>              <li>Interoperability</li>-->
+            <li>Trust</li> <li>Processability</li>
+          </ul>
+        </section>
+      </div>
+      <!-- end of BP Enrich Data -->
+      <!-- begin of BP Complementary Presentations -->
+      <div class="practice">
+        <p><span id="EnrichData" class="practicelab">Provide Complementary Presentations</span></p>
+        <p class="practicedesc">Enrich data by also presenting it in complementary, immediately informative ways, such as visualizations, tables, web applications, or summaries. </p>
+        <section class="axioms">
+          <p class="subhead">Why</p>
+          <p>Data published online is meant to inform others about its subject. But only posting datasets for download or API access puts the burden on consumers to interpret it. The web offers unparalleled opportunities for presenting data in ways that let users learn and explore without having to create their own tools.</p>
+        </section>
+        <section class="outcome">
+          <p class="subhead">Intended Outcome</p>
+          <p>Besides making datasets available for download, processing, and reuse, publishers should give human consumers immediate insight into the data by presenting it in ways that are readily understood. Data consumers should not have to create their own tools to understand the meaning of the data.</p>
+        </section>
+        <section class="how">
+          <p class="subhead"> Possible Approaches to Implementation</p>
+          <p> One very simple way to provide immediate insight is to publish an analytical summary in an HTML page. Including summative data in graphs or tables can help users scan the summary and quickly understand the meaning of the data.</p>
+          <p>If you have the means to create interactive visualizations or web applications that use the data, you can give consumers of your data greater ability to understand it and discover patterns in it. These approaches also demonstrate its suitability for processing and encourage reuse.</p>
+          <aside class="example">
+            <p>The MyCity transit agency publishes detailed data about all its transit lines through an API, but it also has many users who are not web developers and who want to know how to use the system to move about the city. The transit agency could build a web application that allows users to enter a departure address and a destination and receive step-by-step directions for making their journey via public transit. </p>
+          </aside>
+        </section>
+        <section class="test">
+          <p class="subhead">How to test</p>
+          <p>Check that the dataset is accompanied by some additional interpretive content that can be perceived without downloading the data or invoking an API.</p>
         </section>
         <section class="ucr">
           <p class="subhead">Evidence</p>
@@ -3908,16 +4108,161 @@ HTTP/1.1 200 Ok
           <p class="subhead">Benefits</p>
           <ul class="benefitsList">
             <li>Reuse</li>
-            <li>Comprehension</li>
-            <!--              <li>Linkability</li>
-              <li>Discoverability</li>              <li>Trust</li>              <li>Access</li>              <li>Interoperability</li>-->
-            <li>Processability</li>
+            <li>Comprehension</li><li>Access</li>
+              <!--                                                   <li>Interoperability</li>
+            <li>Linkability</li> <li>Processability</li>-->
+            <li>Trust</li>
           </ul>
         </section>
       </div>
-      <!-- end of BP Data Enrichment -->
+      <!-- end of BP Complementary Presentations -->
     </section>
     <!-- end Enrichment -->
+    <!-- begin Re-use -->
+    <section id="Re-use">
+      <h3>Data Reuse</h3>
+      <p>Reusing data is another way of publishing data. It can take the form of combining existing data with other datasets, creating web applications or visualizations, or repackaging the data in a new form, such as a translation. Data reusers have some responsibilities that are unique to that form of publishing on the web. This section provides advice to be followed when reusing data. </p>
+      <!-- begin of BP Provide Feedback -->
+      <div class="practice">
+        <p><span id="EnrichData" class="practicelab">Provide Feedback to the Original Publisher</span></p>
+        <p class="practicedesc">When using data published by others, let them know that you are reusing their data. If you find an error or have suggestions or compliments, let them know.</p>
+        <section class="axioms">
+          <p class="subhead">Why</p>
+          <p>Publishers generally want to know whether the data they publish has been useful. Moreover, they may be required to report usage statistics in order to allocate resources to data publishing activities. Reporting your usage helps them justify putting effort toward data releases. Providing feedback repays the publishers for their efforts by directly helping them to improve their dataset for future users.</p>
+        </section>
+        <section class="outcome">
+          <p class="subhead">Intended Outcome</p>
+          <p>Better communication will make it easier for original publishers to determine how the data they post is being used, which in turn helps them justify publishing the data. Publishers will also be made aware of steps they can take to improve their data. This leads to more and better data for everyone.</p>
+        </section>
+        <section class="how">
+          <p class="subhead"> Possible Approach to Implementation</p>
+          <p>When you begin using a dataset in a new product, make a note of the publisher’s contact information, the URI of the dataset you used, and the date on which you contacted them. This can be done in comments within your code where the dataset is used. Follow the publisher’s preferred route to provide feedback. If they do not provide a route, look for contact information for the Web site hosting the data.</p>
+          <aside class="example">
+            <pre># Calling the MyCity transit API, http://api.mycitytransit.example.org/docs/
+# Published by MyCity Transit Agency, 
+# notified of our reuse by email to opendata@mycitytransit.example.org 
+# by Newton Calegari on 3/24/2016.</pre>
+          </aside>
+        </section>
+        <section class="test">
+          <p class="subhead">How to test</p>
+          <p>Check that you have a record of at least one communication informing the publisher of your use of the data.</p>
+        </section>
+        <section class="ucr">
+          <p class="subhead">Evidence</p>
+          <p><span>Relevant requirements:</span> <a href="http://www.w3.org/TR/dwbp-ucr/#R-TrackDataUsages">R-TrackDataUsages</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-UsageFeedback">R-UsageFeedback</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-QualityOpinions">R-QualityOpinions</a></p>
+        </section>
+        <section class="benefits">
+          <p class="subhead">Benefits</p>
+          <ul class="benefitsList">
+            <li>Reuse</li>
+             <!--   <li>Comprehension</li><li>Access</li>   <li>Discoverability</li>
+                                                             
+            <li>Linkability</li> <li>Processability</li>-->
+            <li>Interoperability</li> <li>Trust</li>
+          </ul>
+        </section>
+      </div>
+      <!-- end of BP Provide Feedback -->
+
+      <!-- begin of BP Follow Licensing -->
+      <div class="practice">
+        <p><span id="EnrichData" class="practicelab">Follow Licensing Terms</span></p>
+        <p class="practicedesc">Find and follow the licensing requirements from the original publisher of the dataset.</p>
+        <section class="axioms">
+          <p class="subhead">Why</p>
+          <p>Licensing provides a legal framework for using someone else’s work product. By adhering to the original publisher’s requirements, you keep the relationship between yourself and the publisher friendly. You don’t need to worry about legal action from the original publisher if you are following their wishes. Understanding the initial license will help you determine what license to select for your reuse.</p>
+        </section>
+        <section class="outcome">
+          <p class="subhead">Intended Outcome</p>
+          <p>Data publishers will be able to trust that their work is being reused in accordance with their licensing requirements, which will make them more likely to continue to publish data. Reusers of data will themselves be able to properly license their derivative works.</p>
+        </section>
+        <section class="how">
+          <p class="subhead"> Possible Approach to Implementation</p>
+          <p>Read the original license and adhere to its requirements. If the license calls for specific licensing of derivative works, choose your license to be compatible with that requirement. If no license is given, contact the original publisher and ask what the license is.</p>
+          <aside class="example">
+            <p>If a dataset you are reusing is licensed under the Creative Commons Attribution 3.0 License, you will need to meet the terms specified in that <a href="https://creativecommons.org/licenses/by/3.0/us/legalcode">license agreement</a>.</p>
+          </aside>
+        </section>
+        <section class="test">
+          <p class="subhead">How to test</p>
+          <p>Read through the original license and check that your use of the data does not violate any of the terms.</p>
+        </section>
+        <section class="ucr">
+          <p class="subhead">Evidence</p>
+          <p><span>Relevant requirements:</span> <a href="http://www.w3.org/TR/dwbp-ucr/#R-LicenseAvailable">R-LicenseAvailable</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-LicenseLiability">R-LicenseLiability</a>, </p>
+        </section>
+        <section class="benefits">
+          <p class="subhead">Benefits</p>
+          <ul class="benefitsList">
+            <li>Reuse</li>
+             <!--   <li>Comprehension</li><li>Access</li>   <li>Discoverability</li>
+            <li>Linkability</li> <li>Processability</li><li>Interoperability</li> -->
+            <li>Trust</li>
+          </ul>
+        </section>
+      </div>
+      <!-- end of BP Follow Licensing -->
+
+      <!-- begin of BP Cite Original-->
+      <div class="practice">
+        <p><span id="EnrichData" class="practicelab">Cite the Original Publication</span></p>
+        <p class="practicedesc">Indicate the source of your data in the metadata for your reuse of the data. If you provide a user interface, include the citation visibly in the interface.</p>
+        <section class="axioms">
+          <p class="subhead">Why</p>
+          <p>Data is only useful when it is trustworthy. Identifying the source is a major indicator of trustworthiness in two ways: first, the user can judge the trustworthiness of the data from the reputation of the source, and second, citing the source suggests that you yourself are trustworthy as a republisher. In addition to informing the end user, citing helps publishers by crediting their work. Publishers who make data available on the web deserve acknowledgment and are more likely to continue to share data if they find they are credited. Citation also maintains provenance and helps still others to work with the data. </p>
+        </section>
+        <section class="outcome">
+          <p class="subhead">Intended Outcome</p>
+          <p>End users should be able to assess the trustworthiness of the data they see, and original publishers should be recognized for their efforts. The chain of provenance for data on the web should be traceable back to its original publisher.</p>
+        </section>
+        <section class="how">
+          <p class="subhead"> Possible Approach to Implementation</p>
+          <p>You can use the Dataset Usage Vocabulary to cite the original publication of the data in metadata.</p>
+          <aside class="example">
+            <pre>foaf:givenname "E"^^xsd:string;
+foaf:family_name "Costello"^^xsd:string;
+foaf:title "Mayor"^^xsd:string .
+
+ex:timetable-001 a dcat:Dataset ;
+        dct:title  "Bus timetable of MyCity"^^xsd:string;
+        prism:doi "10.3456/4567.21"^^xsd:string ;
+        dcat:landingPage <https://example.org/mycity/trans/timetable-001>; 
+        pav:version "series-1.2"^^xsd:string;
+        dct:issued "2015-MAY-05"^^xsd:date;
+        dct:creator ex:author .
+</pre>
+          </aside>
+            <p>You can cite the original source in a user interface by providing bibliographic text and a working link.</p>
+          <aside class="example">
+          <p>Data source: Costello, E.  "Bus timetable of MyCity" (series 1.2). MyCity.  May 5, 2015. Available from: https://example.org/mycity/trans/timetable-001.</p>
+          </aside>
+        </section>
+        <section class="test">
+          <p class="subhead">How to test</p>
+          <p>Check that the original source of any reused data is cited in the metadata provided. Check that a human-readable citation is readily visible in any user interface.</p>
+        </section>
+        <section class="ucr">
+          <p class="subhead">Evidence</p>
+          <p><span>Relevant requirements:</span> <a href="http://www.w3.org/TR/dwbp-ucr/#R-Citable">R-Citable</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-ProvAvailable">R-ProvAvailable</a>, <a href="http://www.w3.org/TR/dwbp-ucr/#R-MetadataAvailable">R-MetadataAvailable</a></p>
+        </section>
+        <section class="benefits">
+          <p class="subhead">Benefits</p>
+          <ul class="benefitsList">
+            <li>Reuse</li>
+             <!--   <li>Comprehension</li><li>Access</li>   
+                                                             
+            <li>Linkability</li> <li>Processability</li> <li>Interoperability</li>-->
+           <li>Discoverability</li> <li>Trust</li>
+          </ul>
+        </section>
+      </div>
+      <!-- end of BP Cite Original -->
+
+
+    </section>
+    <!-- end Re-use -->
+
   <!-- end best practices -->
   </section>
     <section id="conclusions">
@@ -4112,6 +4457,7 @@ HTTP/1.1 200 Ok
       <embed type="image/svg+xml" src="challenges.svg" style="width:100%" id="challengesSVG">
       <div class="issue">The diagram is too small. What could we do to make it bigger or more readable? (Tracker <a href="https://www.w3.org/2013/dwbp/track/issues/246">ISSUE-246</a>)</div>
     </section>
+
     <section id="BP_Benefits" class="informative">
       <h2>Best Practices Benefits</h2>
       <p>The list below describes the main benefits of applying the DWBP, which Each benefit represents an improvement in the way how datasets are available on the Web.</p>
@@ -4135,215 +4481,17 @@ HTTP/1.1 200 Ok
           publishers and consumers.</li>
       </ul>
 
-      <div class="note">To update the table to use the auto-generate script.</div>
       <p>The following table relates Best Practices and Benefits.</p>
       <table id="bpbenefitstable" class="bptable">
         <caption>Best Practices and Benefits </caption>
-        <tbody>
+        <thead>
           <tr>
             <th>Best Practice</th>
             <th>Benefits</th>
           </tr>
-          <tr>
-            <td>Provide Metadata </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/comprehension.svg" alt="Comprehension" height="70"
-
-                width="80"> <img src="images/discoverability.svg" alt="Discoverability"
-
-                height="70" width="70"> <img src="images/processability.svg" alt="Processability"
-
-                height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td>Provide descriptive metadata </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/comprehension.svg" alt="Comprehension" height="70"
-
-                width="80"> <img src="images/discoverability.svg" alt="Discoverability"
-
-                height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td>Provide locale parameters metadata </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/comprehension.svg" alt="Comprehension" height="70"
-
-                width="80"> </td>
-          </tr>
-          <tr>
-            <td>Provide structural metadata </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/comprehension.svg" alt="Comprehension" height="70"
-
-                width="80"> <img src="images/processability.svg" alt="Processability"
-
-                height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td>Provide data license information </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-            </td>
-          </tr>
-          <tr>
-            <td>Provide data provenance information </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/comprehension.svg" alt="Comprehension" height="70"
-
-                width="80"> <img src="images/trust.svg" alt="Trust" height="70"
-
-                width="80"> </td>
-          </tr>
-          <tr>
-            <td>Provide data quality information </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td>Provide versioning information </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td>Provide Provide version history </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td>Use persistent URIs as identifiers of datasets </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/linkability.svg" alt="Linkability" height="70" width="70">
-              <img src="images/discoverability.svg" alt="Discoverability" height="70"
-
-                width="80"> </td>
-          </tr>
-          <tr>
-            <td> Use persistent URIs as identifiers within datasets </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/linkability.svg" alt="Linkability" height="70" width="70">
-              <img src="images/discoverability.svg" alt="Discoverability" height="70"
-
-                width="80"> </td>
-          </tr>
-          <tr>
-            <td> Assign URIs to dataset versions and series </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/discoverability.svg" alt="Discoverability" height="70"
-
-                width="70"> <img src="images/trust.svg" alt="Trust" height="70"
-
-                width="80"> </td>
-          </tr>
-          <tr>
-            <td> Use machine-readable standardized data formats </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/processability.svg" alt="Processability" height="70"
-
-                width="80"> </td>
-          </tr>
-          <tr>
-            <td> Provide data in multiple formats </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/processability.svg" alt="Processability" height="70"
-
-                width="80"> </td>
-          </tr>
-          <tr>
-            <td> Use standardized terms </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/processability.svg" alt="Processability" height="70"
-
-                width="70"> <img src="images/interoperability.svg" alt="Interoperability"
-
-                height="70" width="70"> </td>
-          </tr>
-          <tr>
-            <td> Reuse vocabularies </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/processability.svg" alt="Processability" height="70"
-
-                width="70"> <img src="images/interoperability.svg" alt="Interoperability"
-
-                height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Choose the right formalization level </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-            </td>
-          </tr>
-          <tr>
-            <td> Provide data unavailability reference </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Provide bulk download </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/access.svg" alt="Access" height="70" width="80">
-            </td>
-          </tr>
-          <tr>
-            <td> Follow REST principles when designing APIs </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/access.svg" alt="Access" height="70" width="80">
-            </td>
-          </tr>
-          <tr>
-            <td> Serving data and resources with different formats </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/access.svg" alt="Access" height="70" width="80">
-            </td>
-          </tr>
-          <tr>
-            <td> Provide real-time access </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/access.svg" alt="Access" height="70" width="70">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Provide data up to date </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/access.svg" alt="Access" height="70" width="70">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Maintain separate versions for a data AP </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/access.svg" alt="Access" height="70" width="80">
-            </td>
-          </tr>
-          <tr>
-            <td> Assess dataset coverage </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Use a trusted serialisation format for preserved data dumps </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-            </td>
-          </tr>
-          <tr>
-            <td> Update the status of identifiers </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Gather feedback from data consumers </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Provide information about feedback </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/trust.svg" alt="Trust" height="70" width="80"> </td>
-          </tr>
-          <tr>
-            <td> Enrich data by generating new metadata </td>
-            <td> <img src="images/reuse.svg" alt="Reuse" height="70" width="60">
-              <img src="images/processability.svg" alt="Processability" height="70"
-
-                width="80"> </td>
-          </tr>
+        </thead>
+        <tbody>
+          <!-- this part is auto-generated by script -->
         </tbody>
       </table>
 
@@ -4351,16 +4499,11 @@ HTTP/1.1 200 Ok
         with adoption of the best practices.</p>
       <div id="benefitsTables"></div>
       <div class="note"> Feedback about the association between BP and benefits is welcome!</div>
-      <div class="issue"> Should we remove the Reuse benefit? As one of the goals of the BP is to promote the data reuse, then all BP have this benefit. <a href="https://www.w3.org/2013/dwbp/track/issues/226"> Issue-226 </a> </div>
-      <div class="issue"> Should we consider other BP benefits? <a href="https://www.w3.org/2013/dwbp/track/issues/230"> Issue-230 </a> </div>
-      <!-- This section is auto-generated -->
+     <!-- This section is auto-generated -->
 
     </section>
     <section id="requirements" class="informative">
       <h2>Use Cases Requirements x Best Practices</h2>
-      <div class="issue"> Each requirement should be listed as an evidence of at least one BP. 
-        We need to review the requirements that are not associated with a BP to check if they are still in the scope of the BP document. 
-        <a href="https://www.w3.org/2013/dwbp/track/issues/229"> Issue-229 </a> </div>
       <table id="requirementsbpstable" class="bptable">
         <caption>Requirements x Best Practices</caption>
         <tbody>

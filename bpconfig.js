@@ -83,7 +83,7 @@ var respecConfig = {
     }],
     wg: "Data on the Web Best Practices Working Group",
     wgURI: "http://www.w3.org/2013/dwbp/",
-    wgPublicList: "public-dwbp-wg",
+    wgPublicList: "public-dwbp-comments", // changed from public-dwbp-wg
     wgPatentURI: "http://www.w3.org/2004/01/pp-impl/68239/status",
     inlineCSS: true,
     noIDLIn: true,
@@ -205,6 +205,14 @@ var respecConfig = {
         "publisher":"W3C/Creative Commons",
         "date":"1 May 2008"
        },
+      "ODRL":{
+        "authors" : [ "Renato Iannella","Susanne Guth","Daniel Paehler","Andreas Kasten" ],
+        "href" : "https://www.w3.org/community/odrl/model/2.1/",
+        "title" : "ODRL Version 2.1 Core Model",
+        "status" : "W3C Community Group Specification",
+        "publisher":"W3C",
+        "date" : "5 March 2015",
+      },
       "ODRL2":{
         "authors":["Renato Iannella","Susanne Guth","Daniel Paehler","Andreas Kasten"],
         "href":"http://www.w3.org/community/odrl/two/model/",
@@ -239,6 +247,18 @@ var respecConfig = {
         "title": "PAV - Provenance, Authoring and Versioning",
         "date": "28 August 2014"
        },
+       "PURI":{
+        "authors":["Phil Archer", "Nikos Loutas", "Stijn Goedertier", "Saky Kourtidis"],
+        "href": "http://philarcher.org/diary/2013/uripersistence/",
+        "title": "Study On Persistent URIs",
+        "date": "17 December 2012"
+       },
+       "SIRI":{
+        "authors":["CEN"],
+        "href": "http://user47094.vs.easily.co.uk/siri/",
+        "title": "Service Interface for Real Time Information CEN/TS 15531  (prCEN/TS-OO278181 )",
+        "date": "October 2006"
+       },
        "Navathe": {
         "authors": ["Ramez Elmasri", "Shamkant B. Navathe"],
       	"title": "Fundamentals of Database Systems",
@@ -258,6 +278,14 @@ var respecConfig = {
         title: "ISO 639-1: Codes for the Representation of Names of Languages - Part 1: Two-letter codes for languages",
         authors: ["Library of Congress"],
         href: "http://id.loc.gov/vocabulary/iso639-1.html"
+      },
+      "SKOS-DESIGN": {
+        title: "Key Choices in the Design of Simple Knowledge Organization System (SKOS)",
+        authors: ["Tom Baker", "Sean Bechhofer", "Antoine Isaac", "Alistair Miles", "Guus Schreiber", "Ed Summers"],
+        "date": "May 2013",
+        "publisher": "Elsevier",
+	status: "Journal of Web Semanics 20: 35-49",
+        href: "http://dx.doi.org/10.1016/j.websem.2013.05.001"
       }
     }
 };
